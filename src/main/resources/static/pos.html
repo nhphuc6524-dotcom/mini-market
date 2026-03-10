@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Supermarket POS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; }
+
+        /* LEFT SIDE */
+        .left {
+            width: 65%;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Search & Barcode */
+        .search-area {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        .barcode-input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: 0.3s;
+            background: #f8fafc;
+        }
+
+        .barcode-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Categories */
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 10px 20px;
+            border: none;
+            background: var(--card);
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: 0.2s;
+            border: 1px solid var(--border);
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Products Grid */
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 18px;
+            text-align: center;
+            transition: 0.3s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .product-card h4 {
+            font-size: 15px;
+            margin: 10px 0 5px;
+            color: var(--text-dark);
+        }
+
+        .product-card p {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .add-btn {
+            margin-top: 12px;
+            background: #eff6ff;
+            color: var(--primary);
+            border: none;
+            width: 100%;
+            padding: 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .product-card:hover .add-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* RIGHT CART */
+        .right {
+            width: 35%;
+            background: var(--card);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+            box-shadow: -10px 0 15px rgba(0,0,0,0.02);
+        }
+
+        .cart-header {
+            padding: 25px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #cart {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 25px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .item-details b { font-size: 15px; display: block; margin-bottom: 2px; }
+        .item-details span { color: var(--text-light); font-size: 13px; }
+
+        .qty-box {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .qty-box button {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .qty-val { margin: 0 12px; font-weight: 600; min-width: 20px; text-align: center; }
+
+        .remove-btn {
+            color: var(--danger);
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-left: 15px;
+            font-size: 18px;
+        }
+
+        /* Checkout Area */
+        .cart-footer {
+            padding: 25px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+        }
+
+        .total-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .total-label { color: var(--text-light); font-weight: 500; }
+        .total-amount { font-size: 28px; font-weight: 800; color: var(--text-dark); }
+
+        .checkout {
+            width: 100%;
+            padding: 18px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkout:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Badge số lượng */
+        .cart-count {
+            background: var(--danger);
+            color: white;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="left">
+        <div class="search-area">
+            <h2 class="section-title"><i class="fa-solid fa-barcode"></i> Quét mã vạch</h2>
+            <input class="barcode-input" id="barcodeInput" 
+                   placeholder="Nhấp vào đây để quét..." 
+                   onkeypress="scanBarcode(event)" autofocus>
+        </div>
+
+        <h3 class="section-title">Danh mục</h3>
+        <div id="categories" class="categories"></div>
+
+        <h3 class="section-title">Sản phẩm</h3>
+        <div id="products" class="products"></div>
+    </div>
+
+    <div class="right">
+        <div class="cart-header">
+            <h2 class="section-title">Giỏ hàng <span class="cart-count" id="cartCount">0</span></h2>
+        </div>
+
+        <div id="cart">
+            </div>
+
+        <div class="cart-footer">
+            <div class="total-box">
+                <span class="total-label">Tổng thanh toán</span>
+                <span class="total-amount">$<span id="total">0</span></span>
+            </div>
+            <button class="checkout" onclick="checkout()">
+                <i class="fa-solid fa-receipt"></i> THANH TOÁN
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+
+let cart=[]
+let allProducts=[]
+
+/* LOAD DATA */
+
+function loadCategories(){
+
+fetch("/api/categories")
+.then(res=>res.json())
+.then(data=>{
+
+let div=document.getElementById("categories")
+
+div.innerHTML=""
+
+let allBtn=document.createElement("button")
+allBtn.innerText="All"
+allBtn.className="category-btn"
+allBtn.onclick=()=>renderProducts(allProducts)
+
+div.appendChild(allBtn)
+
+data.forEach(cat=>{
+
+let btn=document.createElement("button")
+btn.innerText=cat.name
+btn.className="category-btn"
+
+btn.onclick=()=>{
+let filtered=allProducts.filter(p=>p.category.id===cat.id)
+renderProducts(filtered)
+}
+
+div.appendChild(btn)
+
+})
+
+})
+}
+
+function loadProducts(){
+
+fetch("/api/products")
+.then(res=>res.json())
+.then(data=>{
+allProducts=data
+renderProducts(data)
+})
+
+}
+
+function renderProducts(products){
+    let div=document.getElementById("products")
+    div.innerHTML=""
+    products.forEach(p=>{
+        let card=document.createElement("div")
+        card.className="product-card"
+        card.onclick = () => addToCart(p.id) // Bấm vào cả card để thêm
+        card.innerHTML=`
+            <div style="height:80px; background:#f8fafc; border-radius:12px; display:flex; align-items:center; justify-content:center">
+                <i class="fa-solid fa-box" style="font-size:30px; color:#cbd5e1"></i>
+            </div>
+            <h4>${p.name}</h4>
+            <p>$${p.price}</p>
+            <button class="add-btn">Thêm</button>
+        `
+        div.appendChild(card)
+    })
+}
+
+/* CART */
+
+function addToCart(productId){
+
+let product=allProducts.find(p=>p.id===productId)
+
+let existing=cart.find(i=>i.id===productId)
+
+if(existing){
+existing.qty++
+}else{
+
+cart.push({
+...product,
+qty:1
+})
+
+}
+
+renderCart()
+
+}
+
+function renderCart(){
+    let div=document.getElementById("cart")
+    div.innerHTML=""
+    let total=0
+    let count=0
+
+    cart.forEach(item=>{
+        total+=item.price*item.qty
+        count+=item.qty
+        let row=document.createElement("div")
+        row.className="cart-item"
+        row.innerHTML=`
+            <div class="item-details">
+                <b>${item.name}</b>
+                <span>$${item.price} / sp</span>
+            </div>
+            <div class="qty-box">
+                <button onclick="event.stopPropagation(); decrease(${item.id})">-</button>
+                <span class="qty-val">${item.qty}</span>
+                <button onclick="event.stopPropagation(); increase(${item.id})">+</button>
+            </div>
+            <div style="font-weight:700; min-width:60px; text-align:right">$${item.price*item.qty}</div>
+            <button class="remove-btn" onclick="event.stopPropagation(); removeItem(${item.id})">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+        `
+        div.appendChild(row)
+    })
+    document.getElementById("total").innerText=total
+    document.getElementById("cartCount").innerText=count
+}
+
+function increase(id){
+
+let item=cart.find(i=>i.id===id)
+item.qty++
+renderCart()
+
+}
+
+function decrease(id){
+
+let item=cart.find(i=>i.id===id)
+
+item.qty--
+
+if(item.qty<=0){
+
+cart=cart.filter(i=>i.id!==id)
+
+}
+
+renderCart()
+
+}
+
+function removeItem(id){
+
+cart=cart.filter(i=>i.id!==id)
+
+renderCart()
+
+}
+
+/* BARCODE */
+
+function scanBarcode(event){
+
+if(event.key==="Enter"){
+
+let code=document.getElementById("barcodeInput").value
+
+fetch("/api/products/barcode/"+code)
+.then(res=>res.json())
+.then(product=>{
+
+addToCart(product.id)
+
+})
+
+document.getElementById("barcodeInput").value=""
+
+}
+
+}
+
+/* CHECKOUT */
+
+function checkout(){
+
+fetch("/api/orders/checkout",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(cart)
+
+})
+.then(res=>res.text())
+.then(msg=>{
+
+alert("Order success")
+
+cart=[]
+renderCart()
+
+})
+
+}
+
+/* INIT */
+
+loadCategories()
+loadProducts()
+
+</script>
+
+</body>
+</html>
+```

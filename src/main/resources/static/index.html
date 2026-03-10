@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mini Market POS</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+}
+
+input{
+padding:6px;
+margin:5px;
+}
+
+button{
+padding:6px 10px;
+cursor:pointer;
+}
+
+table{
+border-collapse:collapse;
+margin-top:20px;
+width:600px;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+text-align:center;
+}
+
+.total{
+font-size:20px;
+font-weight:bold;
+margin-top:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Mini Market POS</h2>
+
+<h3>Scan Barcode</h3>
+
+<input id="barcode" placeholder="Scan barcode" onkeypress="scanBarcode(event)">
+<button onclick="findProduct()">Find</button>
+
+<h3>Cart</h3>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Price</th>
+<th>Qty</th>
+<th>Total</th>
+<th>Remove</th>
+</tr>
+</thead>
+
+<tbody id="cartTable"></tbody>
+
+</table>
+
+<div class="total">
+Total: <span id="total">0</span>
+</div>
+
+<br>
+
+<button onclick="checkout()">Checkout</button>
+
+<script>
+
+let cart=[]
+
+function findProduct(){
+
+let barcode=document.getElementById("barcode").value
+
+fetch("/products")
+.then(res=>res.json())
+.then(data=>{
+
+let product=data.find(p=>p.barcode==barcode)
+
+if(!product){
+alert("Product not found")
+return
+}
+
+addToCart(product)
+
+})
+
+}
+
+function addToCart(product){
+
+let existing=cart.find(p=>p.id==product.id)
+
+if(existing){
+existing.qty++
+}else{
+cart.push({
+id:product.id,
+name:product.name,
+price:product.price,
+qty:1
+})
+}
+
+renderCart()
+
+}
+
+function renderCart(){
+
+let html=""
+let total=0
+
+cart.forEach((p,index)=>{
+
+let rowTotal=p.price*p.qty
+total+=rowTotal
+
+html+=`
+<tr>
+<td>${p.id}</td>
+<td>${p.name}</td>
+<td>${p.price}</td>
+<td>${p.qty}</td>
+<td>${rowTotal}</td>
+<td>
+<button onclick="removeItem(${index})">X</button>
+</td>
+</tr>
+`
+
+})
+
+document.getElementById("cartTable").innerHTML=html
+document.getElementById("total").innerText=total
+
+}
+
+function checkout(){
+
+if(cart.length==0){
+alert("Cart empty")
+return
+}
+
+fetch("/orders",{
+
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(cart)
+
+})
+.then(res=>res.json())
+.then(data=>{
+
+alert("Order created!")
+
+cart=[]
+renderCart()
+
+})
+
+}
+
+function scanBarcode(event){
+
+if(event.key==="Enter"){
+
+let barcode=document.getElementById("barcode").value
+
+fetch("/products")
+.then(res=>res.json())
+.then(data=>{
+
+let product=data.find(p=>p.barcode==barcode)
+
+if(!product){
+alert("Product not found")
+return
+}
+
+addToCart(product)
+
+document.getElementById("barcode").value=""
+
+})
+
+}
+
+}
+
+function removeItem(index){
+
+cart.splice(index,1)
+renderCart()
+
+}
+</script>
+
+</body>
+</html>
