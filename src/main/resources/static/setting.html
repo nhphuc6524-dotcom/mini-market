@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Cài đặt - MiniMarket</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'Inter',sans-serif;
+background:#f1f5f9;
+color:#1e293b;
+}
+
+.sidebar{
+height:100vh;
+background:#1e293b;
+color:white;
+position:fixed;
+width:240px;
+}
+
+.main-content{
+margin-left:240px;
+padding:30px;
+}
+
+.nav-link{
+color:#cbd5e1;
+padding:12px 20px;
+border-radius:8px;
+margin:4px 15px;
+}
+
+.nav-link:hover{
+background:#334155;
+color:white;
+}
+
+.nav-link.active{
+background:#4f46e5;
+color:white;
+}
+
+.card{
+border:none;
+border-radius:12px;
+box-shadow:0 4px 6px rgba(0,0,0,0.05);
+}
+
+.section-title{
+font-weight:600;
+margin-bottom:15px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main-content">
+
+<h3 class="fw-bold mb-4">
+<i class="fa-solid fa-gear me-2"></i>
+Cài đặt hệ thống
+</h3>
+
+<div class="row g-4">
+
+<!-- STORE INFO -->
+
+<div class="col-md-6">
+
+<div class="card p-4">
+
+<h5 class="section-title">
+<i class="fa-solid fa-shop text-primary me-2"></i>
+Thông tin cửa hàng
+</h5>
+
+<div class="mb-3">
+<label class="form-label">Tên cửa hàng</label>
+<input class="form-control" id="storeName">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Địa chỉ</label>
+<input class="form-control" id="storeAddress">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Số điện thoại</label>
+<input class="form-control" id="storePhone">
+</div>
+
+</div>
+
+</div>
+
+<!-- RECEIPT SETTINGS -->
+
+<div class="col-md-6">
+
+<div class="card p-4">
+
+<h5 class="section-title">
+<i class="fa-solid fa-receipt text-success me-2"></i>
+Cài đặt hóa đơn
+</h5>
+
+<div class="mb-3">
+<label class="form-label">Khổ giấy hóa đơn</label>
+
+<select class="form-select" id="receiptPaperSize">
+
+<option value="58mm">58mm</option>
+<option value="80mm">80mm</option>
+
+</select>
+
+</div>
+
+<div class="mb-3">
+<label class="form-label">Footer hóa đơn</label>
+
+<textarea class="form-control" id="receiptFooter" rows="3"></textarea>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- LOW STOCK -->
+
+<div class="col-md-6">
+
+<div class="card p-4">
+
+<h5 class="section-title">
+<i class="fa-solid fa-boxes-stacked text-warning me-2"></i>
+Cảnh báo tồn kho
+</h5>
+
+<div class="mb-3">
+
+<label class="form-label">
+Mức cảnh báo tồn kho thấp
+</label>
+
+<input
+type="number"
+class="form-control"
+id="lowStockAlert"
+placeholder="Ví dụ: 10">
+
+<small class="text-muted">
+Sản phẩm có tồn kho nhỏ hơn giá trị này sẽ được cảnh báo.
+</small>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- BACKUP -->
+
+<div class="col-md-6">
+
+<div class="card p-4">
+
+<h5 class="section-title">
+<i class="fa-solid fa-database text-danger me-2"></i>
+Backup dữ liệu
+</h5>
+
+<p class="text-muted small">
+Tải file backup toàn bộ dữ liệu hệ thống.
+</p>
+
+<button
+class="btn btn-outline-primary"
+onclick="backupDatabase()">
+
+<i class="fa-solid fa-download me-1"></i>
+Backup Database
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="mt-4">
+
+<button
+class="btn btn-primary"
+onclick="saveSettings()">
+
+<i class="fa-solid fa-floppy-disk me-1"></i>
+Lưu cài đặt
+
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const api="/api/settings"
+
+
+function loadSettings(){
+
+fetch(api)
+
+.then(res=>res.json())
+
+.then(s=>{
+
+document.getElementById("storeName").value=s.storeName
+document.getElementById("storeAddress").value=s.storeAddress
+document.getElementById("storePhone").value=s.storePhone
+document.getElementById("receiptFooter").value=s.receiptFooter
+document.getElementById("receiptPaperSize").value=s.receiptPaperSize
+document.getElementById("lowStockAlert").value=s.lowStockAlert
+
+})
+
+}
+
+
+function saveSettings(){
+
+let data={
+
+storeName:document.getElementById("storeName").value,
+storeAddress:document.getElementById("storeAddress").value,
+storePhone:document.getElementById("storePhone").value,
+receiptFooter:document.getElementById("receiptFooter").value,
+receiptPaperSize:document.getElementById("receiptPaperSize").value,
+lowStockAlert:document.getElementById("lowStockAlert").value
+
+}
+
+fetch(api+"/1",{
+
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(data)
+
+})
+.then(()=>{
+
+alert("Đã lưu cài đặt")
+
+})
+
+}
+
+
+function backupDatabase(){
+
+fetch("/api/backup")
+.then(res => res.blob())
+.then(blob => {
+
+let url = window.URL.createObjectURL(blob)
+
+let a = document.createElement("a")
+a.href = url
+a.download = "backup.sql"
+
+document.body.appendChild(a)
+a.click()
+
+a.remove()
+
+})
+
+}
+
+
+loadSettings()
+
+</script>
+
+<script>
+
+fetch("/components/sidebar.html")
+
+.then(res=>res.text())
+
+.then(data=>{
+
+document.getElementById("sidebar").innerHTML=data
+
+const links=document.querySelectorAll(".nav-link")
+
+const current=window.location.pathname
+
+links.forEach(link=>{
+
+if(link.getAttribute("href")===current){
+
+link.classList.add("active")
+
+}
+
+})
+
+})
+
+</script>
+
+</body>
+</html>

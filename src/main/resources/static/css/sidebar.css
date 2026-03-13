@@ -1,0 +1,33 @@
+/* Sidebar layout */
+
+.sidebar{
+height:100vh;
+background:#1e293b;
+color:white;
+position:fixed;
+width:240px;
+}
+
+/* Menu link */
+
+.nav-link{
+color:#cbd5e1;
+padding:12px 20px;
+border-radius:8px;
+margin:4px 15px;
+transition:0.2s;
+}
+
+/* Hover */
+
+.nav-link:hover{
+background:#334155;
+color:white;
+}
+
+/* Active page */
+
+.nav-link.active{
+background:#334155;
+color:white;
+}

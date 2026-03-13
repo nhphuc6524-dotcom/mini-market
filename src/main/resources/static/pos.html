@@ -2,397 +2,169 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Supermarket POS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <title>POS - Siêu thị Mini</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/sidebar.css">
     <style>
-        :root {
-            --primary: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f1f5f9;
-            --card: #ffffff;
-            --text-dark: #0f172a;
-            --text-light: #64748b;
-            --border: #e2e8f0;
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .main { margin-left: 240px; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Cải tiến khu vực quét mã */
+        .scan-section { background: white; padding: 20px; border-bottom: 2px solid #e2e8f0; }
+        #barcodeInput { 
+            height: 60px; font-size: 1.5rem; font-weight: bold;
+            border: 2px solid #4f46e5; border-radius: 12px;
+            background: #f8faff;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: var(--bg);
-            color: var(--text-dark);
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container { display: flex; height: 100vh; }
-
-        /* LEFT SIDE */
-        .left {
-            width: 65%;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Search & Barcode */
-        .search-area {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
-        }
-
-        .barcode-input {
-            width: 100%;
-            padding: 14px 20px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            font-size: 16px;
-            transition: 0.3s;
-            background: #f8fafc;
-        }
-
-        .barcode-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-        }
-
-        /* Categories */
-        .categories {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .category-btn {
-            padding: 10px 20px;
-            border: none;
-            background: var(--card);
-            color: var(--text-light);
-            cursor: pointer;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: 0.2s;
-            border: 1px solid var(--border);
-        }
-
-        .category-btn:hover, .category-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* Products Grid */
-        .products {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-        }
-
-        .product-card {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 18px;
-            text-align: center;
-            transition: 0.3s;
-            cursor: pointer;
-            border: 1px solid transparent;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-            position: relative;
-        }
-
-        .product-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-        }
-
-        .product-card h4 {
-            font-size: 15px;
-            margin: 10px 0 5px;
-            color: var(--text-dark);
-        }
-
-        .product-card p {
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .add-btn {
-            margin-top: 12px;
-            background: #eff6ff;
-            color: var(--primary);
-            border: none;
-            width: 100%;
-            padding: 8px;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .product-card:hover .add-btn {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* RIGHT CART */
-        .right {
-            width: 35%;
-            background: var(--card);
-            display: flex;
-            flex-direction: column;
-            border-left: 1px solid var(--border);
-            box-shadow: -10px 0 15px rgba(0,0,0,0.02);
-        }
-
-        .cart-header {
-            padding: 25px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        #cart {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px 25px;
-        }
-
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .item-details b { font-size: 15px; display: block; margin-bottom: 2px; }
-        .item-details span { color: var(--text-light); font-size: 13px; }
-
-        .qty-box {
-            display: flex;
-            align-items: center;
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 4px;
-        }
-
-        .qty-box button {
-            width: 28px;
-            height: 28px;
-            border: none;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .qty-val { margin: 0 12px; font-weight: 600; min-width: 20px; text-align: center; }
-
-        .remove-btn {
-            color: var(--danger);
-            background: none;
-            border: none;
-            cursor: pointer;
-            margin-left: 15px;
-            font-size: 18px;
-        }
-
-        /* Checkout Area */
-        .cart-footer {
-            padding: 25px;
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-        }
-
-        .total-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .total-label { color: var(--text-light); font-weight: 500; }
-        .total-amount { font-size: 28px; font-weight: 800; color: var(--text-dark); }
-
-        .checkout {
-            width: 100%;
-            padding: 18px;
-            background: var(--success);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .checkout:hover {
-            filter: brightness(1.1);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-        }
-
-        /* Badge số lượng */
-        .cart-count {
-            background: var(--danger);
-            color: white;
-            font-size: 12px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
+        
+        /* Bảng giỏ hàng có thanh cuộn riêng */
+        .cart-container { flex: 1; overflow-y: auto; padding: 20px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .table thead { position: sticky; top: 0; background: #f8fafc; z-index: 10; }
+        
+        /* Khu vực thanh toán bên phải */
+        .summary-card { background: #1e293b; color: white; height: 100%; border-radius: 0; }
+        .total-label { font-size: 1.2rem; color: #94a3b8; }
+        .total-amount { font-size: 3rem; font-weight: 800; color: #4ade80; }
+        
+        .btn-checkout { height: 80px; font-size: 1.5rem; font-weight: bold; border-radius: 12px; }
+        .qty-btn { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
     </style>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="left">
-        <div class="search-area">
-            <h2 class="section-title"><i class="fa-solid fa-barcode"></i> Quét mã vạch</h2>
-            <input class="barcode-input" id="barcodeInput" 
-                   placeholder="Nhấp vào đây để quét..." 
-                   onkeypress="scanBarcode(event)" autofocus>
+<div id="sidebar"></div>
+
+<div class="main">
+    <div class="scan-section">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-barcode fa-2x text-muted"></i></span>
+                        <input class="form-control border-start-0" id="barcodeInput" 
+                               placeholder="Sẵn sàng quét mã (Enter để thêm)..." 
+                               onkeypress="scanBarcode(event)" autofocus>
+                        <button class="btn btn-primary ms-2" onclick="startScanner()">
+                        <i class="fa-solid fa-camera"></i> Mở Camera
+                        </button>
+
+                        <button class="btn btn-danger ms-2" onclick="stopScanner()">
+                        <i class="fa-solid fa-video-slash"></i> Tắt
+                        </button>
+                    </div>
+                    <div id="reader" style="width:400px; margin-top:10px;"></div>
+                </div>
+            
+            </div>
         </div>
-
-        <h3 class="section-title">Danh mục</h3>
-        <div id="categories" class="categories"></div>
-
-        <h3 class="section-title">Sản phẩm</h3>
-        <div id="products" class="products"></div>
     </div>
 
-    <div class="right">
-        <div class="cart-header">
-            <h2 class="section-title">Giỏ hàng <span class="cart-count" id="cartCount">0</span></h2>
+    <div class="row g-0 flex-grow-1">
+        <div class="col-md-8 cart-container">
+            <div class="card h-100">
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr class="py-3">
+                                <th class="ps-4">Sản phẩm</th>
+                                <th class="text-center">Giá</th>
+                                <th class="text-center" style="width: 150px;">Số lượng</th>
+                                <th class="text-end">Thành tiền</th>
+                                <th class="text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartTable">
+                            </tbody>
+                    </table>
+                    
+                    <div id="emptyCart" class="text-center py-5">
+                        <i class="fa-solid fa-cart-plus fa-4x mb-3 text-light"></i>
+                        <p class="text-muted">Chưa có sản phẩm nào trong giỏ</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="cart">
-            </div>
+        <div class="col-md-4">
+            <div class="card summary-card p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="text-uppercase tracking-wider mb-4">Chi tiết thanh toán</h5>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Số lượng món:</span>
+                        <span id="itemCount" class="fw-bold">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Thuế (0%):</span>
+                        <span class="fw-bold">0 đ</span>
+                    </div>
+                    <hr class="opacity-10">
+                    <div class="py-3">
+                        <span class="total-label">TỔNG CỘNG</span>
+                        <div class="total-amount"><span id="totalPrice">0</span> <small style="font-size: 1.5rem">đ</small></div>
+                    </div>
+                </div>
 
-        <div class="cart-footer">
-            <div class="total-box">
-                <span class="total-label">Tổng thanh toán</span>
-                <span class="total-amount">$<span id="total">0</span></span>
+                <div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Khách đưa:</label>
+                        <input type="number" class="form-control form-control-lg bg-dark text-white border-secondary" placeholder="0">
+                    </div>
+                    <button class="btn btn-success w-100 btn-checkout mb-3" onclick="checkout()">
+                        <i class="fa-solid fa-print me-2"></i> THANH TOÁN
+                    </button>
+                    <button class="btn btn-outline-danger w-100" onclick="clearCart()">
+                        Hủy đơn (F8)
+                    </button>
+                </div>
             </div>
-            <button class="checkout" onclick="checkout()">
-                <i class="fa-solid fa-receipt"></i> THANH TOÁN
-            </button>
         </div>
     </div>
 </div>
 
 <script>
 
-let cart=[]
-let allProducts=[]
+const productAPI = "/api/products/barcode/"
+const orderAPI = "/api/orders"
 
-/* LOAD DATA */
+let cart = []
 
-function loadCategories(){
+function scanBarcode(e){
 
-fetch("/api/categories")
+if(e.key !== "Enter") return
+
+let barcode = document.getElementById("barcodeInput").value
+
+fetch(productAPI + barcode)
 .then(res=>res.json())
-.then(data=>{
+.then(product=>{
 
-let div=document.getElementById("categories")
+addToCart(product)
 
-div.innerHTML=""
-
-let allBtn=document.createElement("button")
-allBtn.innerText="All"
-allBtn.className="category-btn"
-allBtn.onclick=()=>renderProducts(allProducts)
-
-div.appendChild(allBtn)
-
-data.forEach(cat=>{
-
-let btn=document.createElement("button")
-btn.innerText=cat.name
-btn.className="category-btn"
-
-btn.onclick=()=>{
-let filtered=allProducts.filter(p=>p.category.id===cat.id)
-renderProducts(filtered)
-}
-
-div.appendChild(btn)
+document.getElementById("barcodeInput").value=""
 
 })
 
-})
 }
 
-function loadProducts(){
+function addToCart(product){
 
-fetch("/api/products")
-.then(res=>res.json())
-.then(data=>{
-allProducts=data
-renderProducts(data)
-})
-
-}
-
-function renderProducts(products){
-    let div=document.getElementById("products")
-    div.innerHTML=""
-    products.forEach(p=>{
-        let card=document.createElement("div")
-        card.className="product-card"
-        card.onclick = () => addToCart(p.id) // Bấm vào cả card để thêm
-        card.innerHTML=`
-            <div style="height:80px; background:#f8fafc; border-radius:12px; display:flex; align-items:center; justify-content:center">
-                <i class="fa-solid fa-box" style="font-size:30px; color:#cbd5e1"></i>
-            </div>
-            <h4>${p.name}</h4>
-            <p>$${p.price}</p>
-            <button class="add-btn">Thêm</button>
-        `
-        div.appendChild(card)
-    })
-}
-
-/* CART */
-
-function addToCart(productId){
-
-let product=allProducts.find(p=>p.id===productId)
-
-let existing=cart.find(i=>i.id===productId)
+let existing = cart.find(p=>p.id === product.id)
 
 if(existing){
+
 existing.qty++
+
 }else{
 
 cart.push({
-...product,
+id:product.id,
+name:product.name,
+price:product.price,
 qty:1
 })
 
@@ -402,126 +174,229 @@ renderCart()
 
 }
 
-function renderCart(){
-    let div=document.getElementById("cart")
-    div.innerHTML=""
-    let total=0
-    let count=0
 
-    cart.forEach(item=>{
-        total+=item.price*item.qty
-        count+=item.qty
-        let row=document.createElement("div")
-        row.className="cart-item"
-        row.innerHTML=`
-            <div class="item-details">
-                <b>${item.name}</b>
-                <span>$${item.price} / sp</span>
-            </div>
-            <div class="qty-box">
-                <button onclick="event.stopPropagation(); decrease(${item.id})">-</button>
-                <span class="qty-val">${item.qty}</span>
-                <button onclick="event.stopPropagation(); increase(${item.id})">+</button>
-            </div>
-            <div style="font-weight:700; min-width:60px; text-align:right">$${item.price*item.qty}</div>
-            <button class="remove-btn" onclick="event.stopPropagation(); removeItem(${item.id})">
-                <i class="fa-solid fa-circle-xmark"></i>
-            </button>
-        `
-        div.appendChild(row)
-    })
-    document.getElementById("total").innerText=total
-    document.getElementById("cartCount").innerText=count
-}
+    function renderCart(){
+        let rows = "";
+        let total = 0;
+        let count = 0;
 
-function increase(id){
+        if(cart.length > 0) document.getElementById("emptyCart").style.display = "none";
+        else document.getElementById("emptyCart").style.display = "block";
 
-let item=cart.find(i=>i.id===id)
-item.qty++
+        cart.forEach((p, index) => {
+            let sub = p.price * p.qty;
+            total += sub;
+            count += p.qty;
+            rows += `
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold text-dark">${p.name}</div>
+                    <small class="text-muted">Barcode: ${p.barcode || 'N/A'}</small>
+                </td>
+                <td class="text-center fw-semibold text-secondary">${p.price.toLocaleString()}</td>
+                <td class="text-center">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <button class="btn btn-outline-secondary qty-btn" onclick="decrease(${index})">-</button>
+                        <span class="fw-bold" style="min-width: 30px">${p.qty}</span>
+                        <button class="btn btn-outline-secondary qty-btn" onclick="increase(${index})">+</button>
+                    </div>
+                </td>
+                <td class="text-end fw-bold text-primary">${sub.toLocaleString()} đ</td>
+                <td class="text-center pe-4">
+                    <button class="btn btn-link text-danger p-0" onclick="removeItem(${index})">
+                        <i class="fa-solid fa-circle-xmark fa-lg"></i>
+                    </button>
+                </td>
+            </tr>`;
+        });
+
+        document.getElementById("cartTable").innerHTML = rows;
+        document.getElementById("totalPrice").innerText = total.toLocaleString();
+        document.getElementById("itemCount").innerText = count;
+    }
+
+    // Tích hợp phím tắt cho chuyên nghiệp
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'F8') clearCart();
+        if(e.key === 'F9') checkout();
+    });
+
+    function clearCart() {
+        if(confirm("Bạn có chắc muốn hủy giỏ hàng?")) {
+            cart = [];
+            renderCart();
+        }
+    }
+
+function increase(i){
+
+cart[i].qty++
 renderCart()
 
 }
 
-function decrease(id){
+function decrease(i){
 
-let item=cart.find(i=>i.id===id)
-
-item.qty--
-
-if(item.qty<=0){
-
-cart=cart.filter(i=>i.id!==id)
-
+if(cart[i].qty >1){
+cart[i].qty--
+}else{
+cart.splice(i,1)
 }
 
 renderCart()
 
 }
 
-function removeItem(id){
+function removeItem(i){
 
-cart=cart.filter(i=>i.id!==id)
-
+cart.splice(i,1)
 renderCart()
 
 }
 
-/* BARCODE */
+async function checkout(){
 
-function scanBarcode(event){
-
-if(event.key==="Enter"){
-
-let code=document.getElementById("barcodeInput").value
-
-fetch("/api/products/barcode/"+code)
-.then(res=>res.json())
-.then(product=>{
-
-addToCart(product.id)
-
-})
-
-document.getElementById("barcodeInput").value=""
-
+if(cart.length===0){
+alert("Giỏ hàng trống")
+return
 }
 
-}
+let total = cart.reduce((sum,p)=> sum + p.price*p.qty ,0)
 
-/* CHECKOUT */
-
-function checkout(){
-
-fetch("/api/orders/checkout",{
-
+// tạo order
+let res = await fetch(orderAPI,{
 method:"POST",
-
 headers:{
 "Content-Type":"application/json"
 },
-
-body:JSON.stringify(cart)
-
+body:JSON.stringify({
+total:total
 })
-.then(res=>res.text())
-.then(msg=>{
+})
 
-alert("Order success")
+let order = await res.json()
+let orderId = order.id
+
+// lưu order items
+for(let item of cart){
+
+await fetch("/api/order-items",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+orderId:orderId,
+productId:item.id,
+price:item.price,
+quantity:item.qty
+})
+})
+
+}
+
+alert("Thanh toán thành công - Order #" + order.id)
 
 cart=[]
 renderCart()
 
-})
-
 }
-
-/* INIT */
-
-loadCategories()
-loadProducts()
 
 </script>
 
+<script>
+fetch("/components/sidebar.html")
+.then(res => res.text())
+.then(data => {
+
+document.getElementById("sidebar").innerHTML = data;
+
+const links = document.querySelectorAll(".nav-link");
+const current = window.location.pathname.split("/").pop();
+
+links.forEach(link => {
+
+const href = link.getAttribute("href").split("/").pop();
+
+if(href === current){
+link.classList.add("active");
+}
+
+});
+
+});
+</script>
+<script>
+let scanner;
+let scanLock = false;
+let cameraRunning = false;
+
+function startScanner(){
+
+if(cameraRunning) return;
+
+scanner = new Html5Qrcode("reader");
+
+scanner.start(
+{ facingMode: "environment" },
+{
+fps:10,
+qrbox:{width:250,height:120},
+aspectRatio:1.7
+},
+(barcode)=>{
+
+if(scanLock) return
+scanLock = true
+
+barcode = barcode.trim()
+
+console.log("Scanned:", barcode)
+
+new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg").play()
+
+document.getElementById("barcodeInput").value = barcode
+
+fetch(productAPI + barcode)
+.then(res=>{
+if(!res.ok) throw new Error()
+return res.json()
+})
+.then(product=>{
+
+addToCart(product)
+
+document.getElementById("barcodeInput").focus()
+
+})
+.catch(()=>{
+alert("Không tìm thấy sản phẩm")
+})
+
+document.getElementById("barcodeInput").value=""
+
+// mở lại scan sau 2 giây
+setTimeout(()=>{
+scanLock = false
+},2000)
+
+}
+)
+
+cameraRunning = true
+
+}
+
+function stopScanner(){
+
+if(scanner && cameraRunning){
+
+scanner.stop()
+cameraRunning = false
+
+}
+
+}
+</script>
 </body>
 </html>
-```

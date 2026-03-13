@@ -20,9 +20,6 @@ public class Product {
     @Column(name="stock_quantity")
     private Integer stockQuantity;
 
-    @Column(name="category_id")
-    private Integer categoryId;
-
     public Product(){}
 
     public Integer getId(){ return id; }
@@ -40,6 +37,4 @@ public class Product {
     public Integer getStockQuantity(){ return stockQuantity; }
     public void setStockQuantity(Integer stockQuantity){ this.stockQuantity=stockQuantity; }
 
-    public Integer getCategoryId(){ return categoryId; }
-    public void setCategoryId(Integer categoryId){ this.categoryId=categoryId; }
 }

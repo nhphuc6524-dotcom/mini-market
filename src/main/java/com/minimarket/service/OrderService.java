@@ -20,8 +20,8 @@ public class OrderService {
 
         Order order = new Order();
         order.setOrderDate(LocalDateTime.now());
-        order.setTotalAmount(total);
-
+        order.setTotal(total);
+        
         return orderRepository.save(order);
     }
 }

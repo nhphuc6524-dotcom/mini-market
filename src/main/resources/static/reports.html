@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Báo cáo doanh thu - MiniMarket</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #334155; }
+        .sidebar { height: 100vh; background: #1e293b; color: white; position: fixed; width: 240px; }
+        .main-content { margin-left: 240px; padding: 2rem; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .stat-card { transition: transform 0.2s; border-left: 5px solid #4f46e5; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .card-header { background: white; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding: 1.25rem; }
+        .nav-link { color: #cbd5e1; padding: 12px 20px; border-radius: 8px; margin: 4px 15px; }
+        .nav-link:hover, .nav-link.active { background: #334155; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold">Báo cáo & Thống kê</h3>
+        <button class="btn btn-white border shadow-sm btn-sm" onclick="location.reload()">
+            <i class="fa-solid fa-sync me-1"></i> Làm mới dữ liệu
+        </button>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1">DOANH THU HÔM NAY</p>
+                        <h3 class="fw-bold mb-0 text-primary" id="todayRevenue">0 đ</h3>
+                    </div>
+                    <div class="bg-primary-subtle p-3 rounded-circle">
+                        <i class="fa-solid fa-sack-dollar fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card p-3" style="border-left-color: #10b981;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1">ĐƠN HÀNG MỚI</p>
+                        <h3 class="fw-bold mb-0 text-success" id="orderCount">0</h3>
+                    </div>
+                    <div class="bg-success-subtle p-3 rounded-circle">
+                        <i class="fa-solid fa-cart-shopping fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card p-3" style="border-left-color: #f59e0b;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1">SẢN PHẨM SẮP HẾT</p>
+                        <h3 class="fw-bold mb-0 text-warning" id="lowStockCount">0</h3>
+                    </div>
+                    <div class="bg-warning-subtle p-3 rounded-circle">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fa-solid fa-chart-line me-2 text-primary"></i>Biểu đồ doanh thu 7 ngày qua
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="280"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fa-solid fa-trophy me-2 text-warning"></i>Top sản phẩm bán chạy
+                </div>
+                <div class="card-body p-0">
+                    <ul id="topProducts" class="list-group list-group-flush">
+                        </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Tải Sidebar
+    fetch("/components/sidebar.html").then(res => res.text()).then(data => {
+        document.getElementById("sidebar").innerHTML = data;
+    });
+
+    // 2. Load Dữ liệu
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTodayStats();
+        loadWeeklyRevenue();
+        loadTopProducts();
+    });
+
+    function loadTodayStats() {
+        fetch("/api/reports/today")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("todayRevenue").innerText = Number(data.revenue).toLocaleString("vi-VN") + " đ";
+                document.getElementById("orderCount").innerText = data.orderCount || 0;
+                document.getElementById("lowStockCount").innerText = data.lowStockCount || 0;
+            });
+    }
+
+    function loadWeeklyRevenue() {
+        fetch("/api/reports/weekly")
+            .then(res => res.json())
+            .then(data => {
+                let labels = data.map(d => d.day);
+                let values = data.map(d => d.revenue);
+
+                new Chart(document.getElementById("revenueChart"), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Doanh thu (VND)',
+                            data: values,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#4f46e5'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            });
+    }
+
+    function loadTopProducts() {
+        fetch("/api/reports/top-products")
+            .then(res => res.json())
+            .then(data => {
+                let list = document.getElementById("topProducts");
+                list.innerHTML = data.map((p, index) => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-light text-dark border me-2">${index + 1}</span>
+                            <span class="fw-semibold">${p.name}</span>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3">${p.total_sold} món</span>
+                    </li>
+                `).join('');
+            });
+    }
+</script>
+
+</body>
+</html>

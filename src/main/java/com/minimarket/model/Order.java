@@ -15,11 +15,11 @@ public class Order {
     @Column(name="order_date")
     private LocalDateTime orderDate;
 
-    @Column(name="total_amount")
-    private BigDecimal totalAmount;
+    @Column(name="total")
+    private BigDecimal total;
 
     public Order(){}
-
+    
     public Integer getId(){
         return id;
     }
@@ -36,11 +36,11 @@ public class Order {
         this.orderDate = orderDate;
     }
 
-    public BigDecimal getTotalAmount(){
-        return totalAmount;
+    public BigDecimal getTotal(){
+        return total;
     }
 
-    public void setTotalAmount(BigDecimal totalAmount){
-        this.totalAmount = totalAmount;
+    public void setTotal(BigDecimal total){
+        this.total = total;
     }
 }

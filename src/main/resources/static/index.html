@@ -1,219 +1,377 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Mini Market POS</title>
-
-<style>
-
-body{
-font-family:Arial;
-margin:40px;
-}
-
-input{
-padding:6px;
-margin:5px;
-}
-
-button{
-padding:6px 10px;
-cursor:pointer;
-}
-
-table{
-border-collapse:collapse;
-margin-top:20px;
-width:600px;
-}
-
-th,td{
-border:1px solid #ccc;
-padding:8px;
-text-align:center;
-}
-
-.total{
-font-size:20px;
-font-weight:bold;
-margin-top:10px;
-}
-
-</style>
+    <meta charset="UTF-8">
+    <title>Mini Market - Quản trị hệ thống</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #334155; }
+        .sidebar { height: 100vh; background: #1e293b; color: white; position: fixed; width: 240px; }
+        .main-content { margin-left: 240px; padding: 2rem; }
+        .nav-link { color: #cbd5e1; padding: 12px 20px; border-radius: 8px; margin: 4px 15px; }
+        .nav-link:hover, .nav-link.active { background: #334155; color: white; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .table thead { background-color: #f1f5f9; }
+        .form-control { border-radius: 8px; padding: 10px; border: 1px solid #e2e8f0; }
+        .btn-primary { background: #4f46e5; border: none; padding: 10px 20px; }
+        .btn-primary:hover { background: #4338ca; }
+        .stock-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; }
+    </style>
 </head>
-
 <body>
 
-<h2>Mini Market POS</h2>
+<div id="sidebar"></div>
 
-<h3>Scan Barcode</h3>
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold">Quản lý kho hàng</h3>
+        <div class="d-flex gap-2">
+            <span class="text-muted"><i class="fa-solid fa-calendar me-1"></i> Hôm nay: 12/03/2026</span>
+        </div>
+    </div>
 
-<input id="barcode" placeholder="Scan barcode" onkeypress="scanBarcode(event)">
-<button onclick="findProduct()">Find</button>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-3" id="formTitle"><i class="fa-solid fa-circle-plus me-2 text-primary"></i>Sản phẩm mới</h5>
+                <input type="hidden" id="id">
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Tên sản phẩm</label>
+                    <input class="form-control" id="name" placeholder="Ví dụ: Coca Cola">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Mã Barcode</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fa-solid fa-barcode"></i></span>
+                        <input class="form-control" id="barcode" placeholder="893...">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label small fw-semibold">Giá bán (VND)</label>
+                        <input class="form-control" type="number" id="price" placeholder="0.00">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label small fw-semibold">Số lượng</label>
+                        <input class="form-control" type="number" id="stock" placeholder="0">
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-2">
+                    <button class="btn btn-primary fw-bold" onclick="saveProduct()">Lưu sản phẩm</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearForm()">Làm mới</button>
+                </div>
+            </div>
+        </div>
 
-<h3>Cart</h3>
+        <div class="col-md-8">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Danh sách mặt hàng</h5>
+                    <div style="width: 300px;">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                            <input class="form-control border-start-0 ps-0" id="search" placeholder="Quét hoặc nhập barcode..." onkeyup="searchBarcode()">
+                        </div>
+                    </div>
+                </div>
 
-<table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Name</th>
-<th>Price</th>
-<th>Qty</th>
-<th>Total</th>
-<th>Remove</th>
-</tr>
-</thead>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Barcode</th>
+                                <th>Giá</th>
+                                <th>Tồn kho</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            </tbody>
+                    </table>
 
-<tbody id="cartTable"></tbody>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
 
-</table>
+                    <div class="text-muted small">
+                        Hiển thị <span id="showing"></span> sản phẩm
+                    </div>
 
-<div class="total">
-Total: <span id="total">0</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2" onclick="prevPage()">Previous</button>
+                        <span id="pageInfo" class="fw-semibold"></span>
+                        <button class="btn btn-sm btn-light ms-2" onclick="nextPage()">Next</button>
+                    </div>
+
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-<br>
-
-<button onclick="checkout()">Checkout</button>
 
 <script>
 
-let cart=[]
+const api = "/api/products"
+let products = []
+let currentPage = 1
+let rowsPerPage = 6
 
-function findProduct(){
+function loadProducts(){
 
-let barcode=document.getElementById("barcode").value
+fetch(api)
+.then(res => res.json())
+.then(data => {
 
-fetch("/products")
-.then(res=>res.json())
-.then(data=>{
-
-let product=data.find(p=>p.barcode==barcode)
-
-if(!product){
-alert("Product not found")
-return
-}
-
-addToCart(product)
+products = data
+currentPage = 1
+displayProducts()
 
 })
 
 }
 
-function addToCart(product){
+function displayProducts(){
 
-let existing=cart.find(p=>p.id==product.id)
+let start = (currentPage-1) * rowsPerPage
+let end = start + rowsPerPage
 
-if(existing){
-existing.qty++
-}else{
-cart.push({
-id:product.id,
-name:product.name,
-price:product.price,
-qty:1
-})
-}
+let pageItems = products.slice(start,end)
 
-renderCart()
+let rows = ""
 
-}
+pageItems.forEach(p => {
 
-function renderCart(){
+const stockColor = p.stockQuantity < 10 
+? 'bg-danger-subtle text-danger' 
+: 'bg-success-subtle text-success'
 
-let html=""
-let total=0
-
-cart.forEach((p,index)=>{
-
-let rowTotal=p.price*p.qty
-total+=rowTotal
-
-html+=`
+rows += `
 <tr>
-<td>${p.id}</td>
-<td>${p.name}</td>
-<td>${p.price}</td>
-<td>${p.qty}</td>
-<td>${rowTotal}</td>
 <td>
-<button onclick="removeItem(${index})">X</button>
+<div class="fw-semibold">${p.name}</div>
+<small class="text-muted">ID: #${p.id}</small>
+</td>
+
+<td><code>${p.barcode}</code></td>
+
+<td class="fw-bold">${Number(p.price).toLocaleString("vi-VN")} đ</td>
+
+<td>
+<span class="stock-badge ${stockColor}">
+${p.stockQuantity} món
+</span>
+</td>
+
+<td class="text-end">
+<button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
+<i class="fa-solid fa-pen-to-square"></i>
+</button>
+
+<button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
+<i class="fa-solid fa-trash"></i>
+</button>
 </td>
 </tr>
 `
 
 })
 
-document.getElementById("cartTable").innerHTML=html
-document.getElementById("total").innerText=total
+document.getElementById("tableBody").innerHTML = rows
+
+let totalPages = Math.ceil(products.length / rowsPerPage)
+
+document.getElementById("pageInfo").innerText =
+`Page ${currentPage} / ${totalPages}`
+
+document.getElementById("showing").innerText =
+`${products.length} tổng`
+
+}
+function saveProduct(){
+
+let id = document.getElementById("id").value
+
+let product = {
+
+name: document.getElementById("name").value,
+barcode: document.getElementById("barcode").value,
+price: document.getElementById("price").value,
+stockQuantity: document.getElementById("stock").value
 
 }
 
-function checkout(){
+if(id){
 
-if(cart.length==0){
-alert("Cart empty")
-return
+fetch(api + "/" + id,{
+
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(product)
+
+}).then(()=>{
+
+loadProducts()
+clearForm()
+
+})
+
 }
 
-fetch("/orders",{
+else{
+
+fetch(api,{
 
 method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(product)
 
-body:JSON.stringify(cart)
+}).then(()=>{
 
-})
-.then(res=>res.json())
-.then(data=>{
-
-alert("Order created!")
-
-cart=[]
-renderCart()
+loadProducts()
+clearForm()
 
 })
 
 }
 
-function scanBarcode(event){
+}
 
-if(event.key==="Enter"){
+function editProduct(id){
 
-let barcode=document.getElementById("barcode").value
-
-fetch("/products")
+fetch(api + "/" + id)
 .then(res=>res.json())
-.then(data=>{
+.then(p=>{
 
-let product=data.find(p=>p.barcode==barcode)
+document.getElementById("id").value = p.id
+document.getElementById("name").value = p.name
+document.getElementById("barcode").value = p.barcode
+document.getElementById("price").value = p.price
+document.getElementById("stock").value = p.stockQuantity
 
-if(!product){
-alert("Product not found")
+})
+
+}
+
+function deleteProduct(id){
+
+if(confirm("Delete product?")){
+
+fetch(api + "/" + id,{
+method:"DELETE"
+}).then(()=>loadProducts())
+
+}
+
+}
+
+function clearForm(){
+
+document.getElementById("id").value=""
+document.getElementById("name").value=""
+document.getElementById("barcode").value=""
+document.getElementById("price").value=""
+document.getElementById("stock").value=""
+
+}
+
+function searchBarcode(){
+
+let barcode = document.getElementById("search").value
+
+if(barcode === ""){
+loadProducts()
 return
 }
 
-addToCart(product)
+fetch(api + "/barcode/" + barcode)
+.then(res=>res.json())
+.then(p=>{
 
-document.getElementById("barcode").value=""
+const stockColor = p.stockQuantity < 10 
+? 'bg-danger-subtle text-danger' 
+: 'bg-success-subtle text-success'
+
+let row = `
+<tr>
+<td>
+<div class="fw-semibold">${p.name}</div>
+<small class="text-muted">ID: #${p.id}</small>
+</td>
+
+<td><code>${p.barcode}</code></td>
+
+<td class="fw-bold">${Number(p.price).toLocaleString("vi-VN")} đ</td>
+
+<td>
+<span class="stock-badge ${stockColor}">
+${p.stockQuantity} món
+</span>
+</td>
+
+<td class="text-end">
+<button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
+<i class="fa-solid fa-pen-to-square"></i>
+</button>
+
+<button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
+<i class="fa-solid fa-trash"></i>
+</button>
+</td>
+</tr>
+`
+
+document.getElementById("tableBody").innerHTML = row
 
 })
+}
+
+loadProducts()
+
+</script>
+<script>
+fetch("/components/sidebar.html")
+.then(res => res.text())
+.then(data => {
+
+document.getElementById("sidebar").innerHTML = data;
+
+// highlight menu
+const links = document.querySelectorAll(".nav-link");
+const current = window.location.pathname;
+
+links.forEach(link=>{
+if(link.getAttribute("href") === current){
+link.classList.add("active");
+}
+});
+
+});
+function nextPage(){
+
+if(currentPage * rowsPerPage < products.length){
+
+currentPage++
+displayProducts()
 
 }
 
 }
 
-function removeItem(index){
+function prevPage(){
 
-cart.splice(index,1)
-renderCart()
+if(currentPage > 1){
+
+currentPage--
+displayProducts()
+
+}
 
 }
 </script>
-
 </body>
 </html>

@@ -1,41 +1,16 @@
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100),
-    role VARCHAR(20),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT
-);
-
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     barcode VARCHAR(50) UNIQUE,
     price NUMERIC(10,2) NOT NULL,
     stock_quantity INTEGER DEFAULT 0,
-    category_id INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_category
-    FOREIGN KEY (category_id)
-    REFERENCES categories(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total NUMERIC(10,2) DEFAULT 0,
-
-    CONSTRAINT fk_user
-    FOREIGN KEY (user_id)
-    REFERENCES users(id)
+    total NUMERIC(10,2) DEFAULT 0
 );
 
 CREATE TABLE order_items (
@@ -46,23 +21,17 @@ CREATE TABLE order_items (
     price NUMERIC(10,2) NOT NULL,
 
     CONSTRAINT fk_order
-    FOREIGN KEY (order_id)
-    REFERENCES orders(id),
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id),
 
     CONSTRAINT fk_product
-    FOREIGN KEY (product_id)
-    REFERENCES products(id)
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
 );
 
-INSERT INTO users(username,password,full_name,role)
-VALUES ('admin','123456','Admin','ADMIN');
-
-INSERT INTO categories(name,description)
-VALUES 
-('Nước uống','Đồ uống'),
-('Bánh kẹo','Snack');
-
-INSERT INTO products(name,barcode,price,stock_quantity,category_id)
+INSERT INTO products(name, barcode, price, stock_quantity)
 VALUES
-('Coca Cola','893123456789',10,100,1),
-('Pepsi','893987654321',9,80,1);
+('Coca Cola', '893123456789', 10.00, 100),
+('Pepsi', '893987654321', 9.00, 80),
+('7Up', '893111222333', 8.50, 60);
+
