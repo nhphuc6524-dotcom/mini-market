@@ -1,37 +1,230 @@
-CREATE TABLE products (
+-- =========================
+-- MINI SUPERMARKET DATABASE
+-- =========================
+
+-- ==========
+-- CATEGORIES
+-- ==========
+CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    barcode VARCHAR(50) UNIQUE,
-    price NUMERIC(10,2) NOT NULL,
-    stock_quantity INTEGER DEFAULT 0,
+    description TEXT
+);
+
+-- =====
+-- UNITS
+-- =====
+CREATE TABLE units (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL
+);
+
+-- =========
+-- SUPPLIERS
+-- =========
+CREATE TABLE suppliers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total NUMERIC(10,2) DEFAULT 0
+-- ========
+-- PRODUCTS
+-- ========
+CREATE TABLE products (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    barcode VARCHAR(255) UNIQUE,
+    price NUMERIC(12,2) NOT NULL,
+    cost_price NUMERIC(12,2) DEFAULT 0,
+    stock_quantity INTEGER DEFAULT 0,
+    min_stock INTEGER DEFAULT 0,
+    category_id INTEGER,
+    unit_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_product_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(id),
+
+    CONSTRAINT fk_product_unit
+        FOREIGN KEY (unit_id)
+        REFERENCES units(id)
 );
 
-CREATE TABLE order_items (
+-- =====
+-- USERS
+-- =====
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    order_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ======
+-- ORDERS
+-- ======
+CREATE TABLE orders (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INTEGER,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    subtotal NUMERIC(12,2) DEFAULT 0,
+    discount NUMERIC(12,2) DEFAULT 0,
+    total NUMERIC(12,2) DEFAULT 0,
+    payment_method VARCHAR(50),
+    status VARCHAR(30) DEFAULT 'COMPLETED',
+
+    CONSTRAINT fk_order_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+);
+
+-- ===========
+-- ORDER ITEMS
+-- ===========
+CREATE TABLE order_items (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
-    price NUMERIC(10,2) NOT NULL,
+    price NUMERIC(12,2) NOT NULL,
+    subtotal NUMERIC(12,2),
 
-    CONSTRAINT fk_order
+    CONSTRAINT fk_order_items_order
         FOREIGN KEY (order_id)
-        REFERENCES orders(id),
+        REFERENCES orders(id)
+        ON DELETE CASCADE,
 
-    CONSTRAINT fk_product
+    CONSTRAINT fk_order_items_product
         FOREIGN KEY (product_id)
         REFERENCES products(id)
 );
 
-INSERT INTO products(name, barcode, price, stock_quantity)
-VALUES
-('Coca Cola', '893123456789', 10.00, 100),
-('Pepsi', '893987654321', 9.00, 80),
-('7Up', '893111222333', 8.50, 60);
+-- ========
+-- PAYMENTS
+-- ========
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    order_id BIGINT,
+    payment_method VARCHAR(50),
+    amount NUMERIC(12,2),
+    paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_payment_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE CASCADE
+);
+
+-- ===============
+-- PURCHASE ORDER
+-- ===============
+CREATE TABLE purchase_orders (
+    id SERIAL PRIMARY KEY,
+    supplier_id INTEGER,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total NUMERIC(12,2) DEFAULT 0,
+
+    CONSTRAINT fk_purchase_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES suppliers(id)
+);
+
+-- ======================
+-- PURCHASE ORDER ITEMS
+-- ======================
+CREATE TABLE purchase_order_items (
+    id SERIAL PRIMARY KEY,
+    purchase_order_id INTEGER,
+    product_id BIGINT,
+    quantity INTEGER,
+    cost_price NUMERIC(12,2),
+
+    CONSTRAINT fk_purchase_item_order
+        FOREIGN KEY (purchase_order_id)
+        REFERENCES purchase_orders(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_purchase_item_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+);
+
+-- =======
+-- RETURNS
+-- =======
+CREATE TABLE returns (
+    id SERIAL PRIMARY KEY,
+    order_id BIGINT,
+    return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_refund NUMERIC(12,2),
+
+    CONSTRAINT fk_return_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+);
+
+-- ============
+-- RETURN ITEMS
+-- ============
+CREATE TABLE return_items (
+    id SERIAL PRIMARY KEY,
+    return_id INTEGER,
+    product_id BIGINT,
+    quantity INTEGER,
+    refund_amount NUMERIC(12,2),
+
+    CONSTRAINT fk_return_items_return
+        FOREIGN KEY (return_id)
+        REFERENCES returns(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_return_items_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+);
+
+-- =========
+-- SETTINGS
+-- =========
+CREATE TABLE settings (
+    id SERIAL PRIMARY KEY,
+    store_name VARCHAR(255),
+    store_address VARCHAR(255),
+    store_phone VARCHAR(50),
+    receipt_footer VARCHAR(255),
+    receipt_paper_size VARCHAR(20) DEFAULT '80mm',
+    low_stock_alert INTEGER DEFAULT 10,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- DEFAULT DATA
+-- =========================
+
+INSERT INTO units (name) VALUES
+('Lon'),
+('Chai'),
+('Gói'),
+('Hộp'),
+('Kg');
+
+INSERT INTO categories (name) VALUES
+('Nước uống'),
+('Mì gói'),
+('Bánh kẹo'),
+('Gia vị'),
+('Đồ gia dụng');
+
+INSERT INTO users (username,password,role) VALUES
+('admin','admin123','ADMIN'),
+('cashier','123456','CASHIER');
+
+INSERT INTO settings (store_name,store_address,store_phone)
+VALUES
+('Siêu thị Mini','225 Nguyễn Thông','0123456789');
