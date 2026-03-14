@@ -1,0 +1,273 @@
+# Hệ thống Quản lý Siêu Thị Mini (Mini Supermarket Management System)
+
+## 1. Thông tin chung
+
+| Thuộc tính      | Giá trị                        |
+| --------------- | ------------------------------ |
+| Domain          | Sales / Retail                 |
+| Backend         | Spring Boot (REST API)         |
+| Database        | PostgreSQL                     |
+| Kiến trúc       | RESTful API                    |
+| Công nghệ chính | Barcode + Inventory Management |
+
+---
+
+# 2. Cơ sở dữ liệu chính
+
+### Các bảng chính
+
+| Table         | Mô tả                           |
+| ------------- | ------------------------------- |
+| `products`    | Thông tin sản phẩm              |
+| `orders`      | Hóa đơn bán hàng                |
+| `order_items` | Chi tiết sản phẩm trong hóa đơn |
+
+### Có thể mở rộng thêm
+
+| Table                  | Mục đích           |
+| ---------------------- | ------------------ |
+| `categories`           | Nhóm sản phẩm      |
+| `units`                | Đơn vị tính        |
+| `suppliers`            | Nhà cung cấp       |
+| `purchase_orders`      | Phiếu nhập hàng    |
+| `purchase_order_items` | Chi tiết nhập hàng |
+| `users`                | Nhân viên          |
+| `payments`             | Thanh toán         |
+
+---
+
+# 3. Chức năng chính (Core Features)
+
+## 3.1 Quản lý sản phẩm
+
+* Quản lý **danh mục sản phẩm**
+* Quản lý **nhóm hàng**
+* Quản lý **đơn vị tính**
+* Quản lý **giá bán**
+* Tra cứu sản phẩm theo:
+
+  * mã sản phẩm
+  * tên sản phẩm
+  * mã vạch (barcode)
+
+---
+
+## 3.2 Quản lý nhập hàng
+
+* Nhập hàng từ **nhà cung cấp**
+* Tạo **phiếu nhập**
+* Cập nhật **tồn kho**
+* Theo dõi lịch sử nhập hàng
+
+---
+
+## 3.3 Quản lý bán hàng (POS)
+
+* Tạo **hóa đơn bán hàng**
+* Thêm **nhiều sản phẩm trong một hóa đơn**
+* Quét **barcode bằng máy scan**
+* Tính toán:
+
+```
+Tổng tiền = Σ (số lượng × giá)
+```
+
+* Áp dụng **giảm giá**
+* Tính **số tiền khách phải thanh toán**
+
+---
+
+## 3.4 In hóa đơn
+
+Sau khi thanh toán:
+
+* In hóa đơn
+* Hiển thị:
+
+```
+Tên sản phẩm
+Số lượng
+Đơn giá
+Thành tiền
+Tổng tiền
+Giảm giá
+Tiền khách trả
+Tiền thối
+```
+
+---
+
+## 3.5 Quản lý tồn kho
+
+Theo dõi:
+
+* số lượng tồn
+* nhập
+* xuất
+
+Tính tồn kho:
+
+```
+Tồn kho = Nhập - Xuất
+```
+
+Chức năng:
+
+* Xem tồn kho từng sản phẩm
+* Cảnh báo **sắp hết hàng**
+* Cảnh báo **dưới mức tồn tối thiểu**
+
+---
+
+# 4. Báo cáo
+
+## 4.1 Báo cáo doanh thu
+
+Theo:
+
+* ngày
+* tháng
+* năm
+
+Ví dụ:
+
+| Date       | Revenue   |
+| ---------- | --------- |
+| 14-03-2026 | 5,200,000 |
+
+---
+
+## 4.2 Báo cáo nhập – xuất – tồn
+
+| Product   | Import | Export | Stock |
+| --------- | ------ | ------ | ----- |
+| Coca Cola | 200    | 150    | 50    |
+
+---
+
+# 5. Chức năng nâng cao (Advanced Features)
+
+## 5.1 Barcode Scanner
+
+* Quét barcode để thêm sản phẩm vào hóa đơn
+* Tự động tìm sản phẩm trong database
+
+---
+
+## 5.2 Thanh toán
+
+Hỗ trợ:
+
+* tiền mặt
+* thẻ
+* QR (mock)
+
+---
+
+## 5.3 Trả hàng / đổi hàng
+
+* Hoàn tiền
+* Cập nhật tồn kho
+
+---
+
+## 5.4 In lại hóa đơn
+
+Tìm theo:
+
+* mã hóa đơn
+* ngày
+
+---
+
+## 5.5 Export báo cáo
+
+Xuất file:
+
+* Excel
+* PDF
+
+---
+
+## 5.6 Dashboard
+
+Hiển thị:
+
+* Doanh thu hôm nay
+* Số hóa đơn
+* Sản phẩm bán chạy
+
+Ví dụ:
+
+| Product | Sold |
+| ------- | ---- |
+| Pepsi   | 120  |
+| Snack   | 95   |
+
+---
+
+## 5.7 Phân quyền người dùng
+
+| Role      | Quyền             |
+| --------- | ----------------- |
+| Cashier   | Bán hàng          |
+| Warehouse | Quản lý kho       |
+| Admin     | Quản trị hệ thống |
+
+---
+
+# 6. Kiến trúc API (Spring Boot)
+
+Ví dụ API:
+
+### Product API
+
+```
+GET /api/products
+GET /api/products/{id}
+GET /api/products/barcode/{barcode}
+POST /api/products
+PUT /api/products/{id}
+DELETE /api/products/{id}
+```
+
+---
+
+### Order API
+
+```
+POST /api/orders
+GET /api/orders/{id}
+GET /api/orders
+```
+
+---
+
+### Inventory API
+
+```
+GET /api/inventory
+GET /api/inventory/low-stock
+```
+
+---
+
+# 7. Quy trình bán hàng
+
+Flow:
+
+```
+Quét barcode
+      ↓
+Thêm sản phẩm vào hóa đơn
+      ↓
+Tính tổng tiền
+      ↓
+Thanh toán
+      ↓
+In hóa đơn
+      ↓
+Cập nhật tồn kho
+```
+
+
