@@ -1,0 +1,27 @@
+
+
+Quản lý danh mục sản phẩm, nhóm hàng, đơn vị tính và giá bán
+Quản lý nhập hàng từ nhà cung cấp và cập nhật số lượng tồn kho
+
+Tạo giao dịch bán hàng tại quầy, hỗ trợ nhiều sản phẩm trong một hóa đơn
+Tính tổng tiền, giảm giá và số tiền khách cần thanh toán
+In hóa đơn bán hàng sau khi thanh toán
+
+Tra cứu sản phẩm theo mã, tên hoặc mã vạch
+
+Theo dõi tồn kho hiện tại của từng sản phẩm
+Cảnh báo sản phẩm sắp hết hàng hoặc dưới mức tồn tối thiểu
+
+Quản lý nhà cung cấp cơ bản phục vụ nhập hang
+
+Báo cáo doanh thu bán hàng theo ngày/tháng
+
+Báo cáo nhập - xuất - tồn theo từng sản phẩm
+
+Quét mã vạch bằng barcode scanner
+Hỗ trợ nhiều phương thức thanh toán như tiền mặt, thẻ, QR mock
+Quản lý trả hàng/đổi hàng
+In lại hóa đơn đã thanh toán
+Export báo cáo ra Excel/PDF
+Dashboard hiển thị top sản phẩm bán chạy
+Phân quyền thu ngân, quản lý kho, quản trị viên

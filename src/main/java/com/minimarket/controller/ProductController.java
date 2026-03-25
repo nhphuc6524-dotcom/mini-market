@@ -4,8 +4,9 @@ import org.springframework.web.bind.annotation.*;
 import com.minimarket.repository.ProductRepository;
 import com.minimarket.model.Product;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/products")
@@ -26,33 +27,57 @@ public class ProductController {
 
     // 2. Lấy sản phẩm theo ID
     @GetMapping("/{id}")
-    public Optional<Product> getProductById(@PathVariable Integer id){
-        return productRepository.findById(id);
+    public Product getProductById(@PathVariable Integer id){
+        Integer safeId = Objects.requireNonNull(id, "ID must not be null");
+        return productRepository.findById(safeId)
+                .orElseThrow(() -> new RuntimeException("Product not found: " + safeId));
     }
 
     // 3. Tìm theo barcode
     @GetMapping("/barcode/{barcode}")
     public Product getByBarcode(@PathVariable String barcode){
-        return productRepository.findByBarcode(barcode);
+        Product p = productRepository.findByBarcode(barcode);
+        if(p == null){
+            throw new RuntimeException("Product not found with barcode: " + barcode);
+        }
+        return p;
     }
 
     // 4. Thêm sản phẩm
     @PostMapping
     public Product createProduct(@RequestBody Product product){
+        validateProduct(product);
+        // Nếu costPrice null thì mặc định 0
+        if(product.getCostPrice() == null){
+            product.setCostPrice(BigDecimal.ZERO);
+        }
+        if(product.getPrice() == null){
+            product.setPrice(BigDecimal.ZERO);
+        }
+        if(product.getStockQuantity() == null){
+            product.setStockQuantity(0);
+        }
         return productRepository.save(product);
     }
 
     // 5. Cập nhật sản phẩm
     @PutMapping("/{id}")
     public Product updateProduct(@PathVariable Integer id,
-                                 @RequestBody Product product){
+                                @RequestBody Product product){
 
-        Product p = productRepository.findById(id).orElseThrow();
+        Integer safeId = Objects.requireNonNull(id, "ID must not be null");
+        Product p = productRepository.findById(safeId)
+                .orElseThrow(() -> new RuntimeException("Product not found: " + safeId));
 
         p.setName(product.getName());
         p.setBarcode(product.getBarcode());
-        p.setPrice(product.getPrice());
-        p.setStockQuantity(product.getStockQuantity());
+        p.setPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
+        p.setCostPrice(product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO);
+        p.setStockQuantity(product.getStockQuantity() != null ? product.getStockQuantity() : 0);
+
+        // xử lý categoryId null-safe
+        Integer safeCatId = product.getCategoryId() != null ? product.getCategoryId() : 0;
+        p.setCategoryId(safeCatId);
 
         return productRepository.save(p);
     }
@@ -60,7 +85,14 @@ public class ProductController {
     // 6. Xóa sản phẩm
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Integer id){
-        productRepository.deleteById(id);
+        Integer safeId = java.util.Objects.requireNonNull(id, "ID must not be null");
+        productRepository.deleteById(safeId);
     }
 
+    // Kiểm tra dữ liệu product trước khi lưu
+    private void validateProduct(Product product){
+        Objects.requireNonNull(product, "Product must not be null");
+        Objects.requireNonNull(product.getName(), "Product name must not be null");
+        Objects.requireNonNull(product.getBarcode(), "Barcode must not be null");
+    }
 }

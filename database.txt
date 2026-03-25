@@ -31,6 +31,7 @@ CREATE TABLE suppliers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
 -- ========
 -- PRODUCTS
 -- ========
@@ -55,6 +56,32 @@ CREATE TABLE products (
         REFERENCES units(id)
 );
 
+CREATE TABLE supplier_products (
+
+    id SERIAL PRIMARY KEY,
+
+    supplier_id INTEGER NOT NULL,
+    product_id BIGINT NOT NULL,
+
+    supplier_product_code VARCHAR(100),
+    cost_price NUMERIC(12,2),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_supplier_products_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES suppliers(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_supplier_products_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT unique_supplier_product
+        UNIQUE (supplier_id, product_id)
+
+);
 -- =====
 -- USERS
 -- =====
@@ -206,20 +233,6 @@ CREATE TABLE settings (
 -- =========================
 -- DEFAULT DATA
 -- =========================
-
-INSERT INTO units (name) VALUES
-('Lon'),
-('Chai'),
-('Gói'),
-('Hộp'),
-('Kg');
-
-INSERT INTO categories (name) VALUES
-('Nước uống'),
-('Mì gói'),
-('Bánh kẹo'),
-('Gia vị'),
-('Đồ gia dụng');
 
 INSERT INTO users (username,password,role) VALUES
 ('admin','admin123','ADMIN'),

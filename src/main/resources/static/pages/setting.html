@@ -272,33 +272,8 @@ loadSettings()
 
 </script>
 
-<script>
+<script src="/js/sidebar.js"></script>
 
-fetch("/components/sidebar.html")
-
-.then(res=>res.text())
-
-.then(data=>{
-
-document.getElementById("sidebar").innerHTML=data
-
-const links=document.querySelectorAll(".nav-link")
-
-const current=window.location.pathname
-
-links.forEach(link=>{
-
-if(link.getAttribute("href")===current){
-
-link.classList.add("active")
-
-}
-
-})
-
-})
-
-</script>
 
 </body>
 </html>

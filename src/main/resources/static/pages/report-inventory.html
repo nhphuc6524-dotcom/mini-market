@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Báo cáo Nhập Xuất Tồn</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/sidebar.css">
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+body {
+  background: #f8f9fa;
+  font-family: Inter, sans-serif;
+}
+.main-content {
+  margin-left: 240px;
+  padding: 30px;
+}
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main-content">
+
+<h3 class="fw-bold mb-4">
+<i class="fa-solid fa-chart-column"></i>
+Báo cáo Nhập Xuất Tồn
+</h3>
+
+<div class="card p-4">
+
+<!-- Dashboard -->
+<div class="row mb-4 text-center">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6>Tổng nhập</h6>
+      <h4 id="totalImport">0</h4>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6>Tổng bán</h6>
+      <h4 id="totalSold">0</h4>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6>Tồn kho</h6>
+      <h4 id="totalStock">0</h4>
+    </div>
+  </div>
+</div>
+
+<!-- Search + Filter -->
+<div class="row mb-3">
+  <div class="col-md-4">
+    <div class="input-group">
+        <input class="form-control" id="search" placeholder="Quét barcode hoặc tìm sản phẩm">
+        
+        <button class="btn btn-outline-secondary" onclick="startScan()">
+            <i class="fa-solid fa-camera"></i>
+        </button>
+
+        <button class="btn btn-outline-danger" onclick="resetSearch()">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+    </div>
+
+    <div id="scanner" style="width:300px; display:none; margin-top:10px;"></div>  </div>
+  <div class="col-md-3">
+    <select class="form-select" id="filterStock">
+      <option value="">Tất cả</option>
+      <option value="low">Tồn thấp</option>
+      <option value="out">Hết hàng</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select class="form-select" id="reportType">
+      <option value="all">Tất cả</option>
+      <option value="day">Theo ngày</option>
+      <option value="month">Theo tháng</option>
+    </select>
+  </div>
+</div>
+
+<!-- Table -->
+<!-- Buttons xuất file -->
+<div class="table-responsive">
+    <button class="btn btn-success mb-3" onclick="exportToExcel()">Xuất Excel</button>
+    <button class="btn btn-success mb-3 ms-2" onclick="exportDetailedExcel()">Xuất Excel chi tiết</button>
+    <button class="btn btn-warning mb-3 ms-2" onclick="fixSoldAndUpdate()">Fix Sold</button>
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Sản phẩm</th>
+                <th>Barcode</th>
+                <th>Nhập</th>
+                <th>Đã bán</th>
+                <th>Tồn kho</th>
+                <th>Ngày nhập</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <!-- Phân trang cho bảng chính -->
+    <div id="tablePagination" class="mt-2 d-flex flex-wrap align-items-center"></div>
+</div>
+
+<!-- Modal lịch sử nhập -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="historyModalLabel">Lịch sử nhập sản phẩm</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Ngày nhập</th>
+              <th>Số lượng</th>
+              <th>Giá nhập</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let currentPage = 1;
+const pageSize = 8; // số bản ghi mỗi trang
+let reportData = [];
+let scannedBarcode = null;
+function formatNumber(v) {
+  return Number(v).toLocaleString("vi-VN");
+}
+
+function loadReport() {
+  fetch("/api/reports/inventory")
+    .then(res => res.json())
+    .then(data => {
+      reportData = data;
+      fixSoldValues();
+      updateTotals();
+      renderTable();
+    });
+}
+
+function updateTotals() {
+  let totalImport = 0, totalSold = 0, totalStock = 0;
+  reportData.forEach(p => {
+    totalImport += p.imported || 0;
+    totalSold += p.sold || 0;
+    totalStock += p.stock || 0;
+  });
+  document.getElementById("totalImport").innerText = formatNumber(totalImport);
+  document.getElementById("totalSold").innerText = formatNumber(totalSold);
+  document.getElementById("totalStock").innerText = formatNumber(totalStock);
+}
+
+function renderTable() {
+  const search = document.getElementById("search").value.toLowerCase();
+  const filter = document.getElementById("filterStock").value;
+  const type = document.getElementById("reportType").value;
+
+  // lọc dữ liệu
+  let filteredData = reportData.filter(p => {
+
+    if (typeof p.imports === "string") {
+      try { p.imports = JSON.parse(p.imports); } catch(e) { p.imports = []; }
+    }
+
+    if (
+      search &&
+      !p.name.toLowerCase().includes(search) &&
+      !String(p.id).includes(search) &&
+      !String(p.barcode || "").includes(search)
+    ) return false;
+
+    let stockType = "ok";
+    if (p.stock === 0) stockType = "out";
+    else if (p.stock < 10) stockType = "low";
+
+    if (filter && filter !== stockType) return false;
+
+    if (type !== "all" && Array.isArray(p.imports)) {
+      const today = new Date();
+      if (type === "day" && !p.imports.some(r => r.date.startsWith(today.toISOString().slice(0,10)))) return false;
+      if (type === "month" && !p.imports.some(r => {
+        const d = new Date(r.date.replace(" ","T"));
+        return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+      })) return false;
+    }
+
+    return true;
+  });
+
+  // tính phân trang
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  const pageData = filteredData.slice(start, end);
+
+  let rows = "";
+  pageData.forEach(p => {
+    let latestDate = "";
+    if (Array.isArray(p.imports) && p.imports.length > 0) {
+      const latest = p.imports.map(r => new Date(r.date.replace(" ","T"))).sort((a,b)=>b-a)[0];
+      latestDate = latest.toISOString().slice(0,16).replace("T"," ");
+    }
+
+    let rowClass = "";
+    if (p.stock === 0) rowClass = "table-danger";
+    else if (p.stock < 10) rowClass = "table-warning";
+    if (scannedBarcode && p.barcode === scannedBarcode) rowClass = "table-success";
+
+    rows += `
+      <tr class="${rowClass}" style="cursor:pointer" onclick='showHistory("${p.name}", ${JSON.stringify(p.imports || [])})'>
+        <td>${p.id}</td>
+        <td><b>${p.name}</b></td>
+        <td>${p.barcode || ""}</td>
+        <td>${formatNumber(p.imported)}</td>
+        <td>${formatNumber(p.sold)}</td>
+        <td><b>${formatNumber(p.stock)}</b></td>
+        <td>${latestDate}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("tableBody").innerHTML = rows;
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  let pagination = document.getElementById("tablePagination");
+  if (!pagination) {
+    pagination = document.createElement("div");
+    pagination.id = "tablePagination";
+    pagination.className = "mt-2 d-flex flex-wrap align-items-center";
+    document.querySelector("#tableBody").parentNode.appendChild(pagination);
+  }
+
+  if (totalPages <= 1) {
+    pagination.innerHTML = "";
+    return;
+  }
+
+  let html = "";
+
+  // Prev
+  html += `<button class="btn btn-sm me-1 mb-1 ${currentPage === 1 ? 'btn-secondary disabled' : 'btn-outline-primary'}" onclick="goToPage(${currentPage-1})">&laquo; Prev</button>`;
+
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  startPage = Math.max(1, endPage - maxButtons + 1);
+
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="btn btn-sm me-1 mb-1 ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'}" onclick="goToPage(${i})">${i}</button>`;
+  }
+
+  // Next
+  html += `<button class="btn btn-sm me-1 mb-1 ${currentPage === totalPages ? 'btn-secondary disabled' : 'btn-outline-primary'}" onclick="goToPage(${currentPage+1})">Next &raquo;</button>`;
+
+  pagination.innerHTML = html;
+}
+
+function goToPage(page) {
+  currentPage = page;
+  renderTable();
+}
+
+function showHistory(productName, imports) {
+  document.getElementById("historyModalLabel").innerText = `Lịch sử nhập: ${productName}`;
+  const tbody = document.getElementById("historyTableBody");
+  tbody.innerHTML = '';
+
+  if (!imports || imports.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>`;
+  } else {
+    imports.forEach(record => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${new Date(record.date).toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric'})}</td>
+          <td>${formatNumber(record.qty)}</td>
+          <td>${formatNumber(record.cost)}</td>
+        </tr>
+      `;
+    });
+  }
+
+  const myModal = new bootstrap.Modal(document.getElementById('historyModal'));
+  myModal.show();
+}
+
+document.getElementById("search").addEventListener("keyup", renderTable);
+document.getElementById("filterStock").addEventListener("change", renderTable);
+document.getElementById("reportType").addEventListener("change", renderTable);
+
+loadReport();
+</script>
+
+<script>
+// Chỉ giữ lại export Excel
+function exportToExcel() {
+    if (!reportData || reportData.length === 0) return;
+
+    const ws_data = [
+        ["ID", "Sản phẩm", "Nhập", "Đã bán", "Tồn kho", "Ngày nhập"]
+    ];
+
+    reportData.forEach(p => {
+        let latestDate = "";
+        if (Array.isArray(p.imports) && p.imports.length > 0){
+            const latest = p.imports.map(r=>new Date(r.date)).sort((a,b)=>b-a)[0];
+            latestDate = latest.toISOString().slice(0,16).replace("T"," ");
+        }
+
+        ws_data.push([
+            p.id,
+            p.name,
+            p.imported,
+            p.sold,
+            p.stock,
+            latestDate
+        ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb, ws, "Inventory Report");
+    XLSX.writeFile(wb, "InventoryReport.xlsx");
+}
+function exportDetailedExcel() {
+    if (!reportData || reportData.length === 0) return;
+
+    const ws_data = [];
+
+    reportData.forEach(p => {
+        ws_data.push([`Sản phẩm: ${p.name} (ID: ${p.id})`]);
+        ws_data.push(["Tổng nhập", "Đã bán", "Tồn kho"]);
+        ws_data.push([p.imported, p.sold, p.stock]);
+        ws_data.push(["Ngày nhập", "Số lượng", "Giá nhập"]);
+
+        if (Array.isArray(p.imports) && p.imports.length > 0) {
+            p.imports.forEach(r => {
+                let dateStr = "";
+                if (r.date) {
+                    const d = new Date(r.date.replace(" ", "T"));
+                    dateStr = d.toLocaleString('vi-VN', {
+                        hour:'2-digit', minute:'2-digit', 
+                        day:'2-digit', month:'2-digit', year:'numeric'
+                    });
+                }
+                ws_data.push([dateStr, r.qty, r.cost]);
+            });
+        } else {
+            ws_data.push(["Không có dữ liệu", "-", "-"]);
+        }
+
+        ws_data.push([]); // dòng trống
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+    // Tăng độ rộng cột
+    ws['!cols'] = [
+      { wch: 35 }, // tên sản phẩm / ngày nhập
+      { wch: 15 }, // số lượng
+      { wch: 15 }, // giá nhập
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Báo cáo chi tiết");
+    XLSX.writeFile(wb, "InventoryReport_Detailed.xlsx");
+}
+let html5QrCode;
+
+function startScan() {
+
+  const scannerDiv = document.getElementById("scanner");
+  scannerDiv.style.display = "block";
+
+  html5QrCode = new Html5Qrcode("scanner");
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: 250
+    },
+    (decodedText) => {
+
+      scannedBarcode = decodedText;
+
+      document.getElementById("search").value = decodedText;
+
+      html5QrCode.stop();
+      scannerDiv.style.display = "none";
+
+      renderTable();
+    },
+    
+    (error) => {}
+  );
+}
+function resetSearch(){
+
+  document.getElementById("search").value = "";
+
+  scannedBarcode = null;
+
+  renderTable();
+
+  document.getElementById("search").focus();
+
+}
+function highlightStockMismatch() {
+  const rows = document.querySelectorAll("#tableBody tr");
+  rows.forEach(row => {
+    const id = row.cells[0].innerText; // cột ID
+    const product = reportData.find(p => String(p.id) === id);
+    if (product) {
+      const expectedStock = (product.imported || 0) - (product.sold || 0);
+      if (expectedStock !== (product.stock || 0)) {
+        row.classList.add("table-danger");
+        row.title = `⚠️ Chưa cập nhật tồn kho (expected: ${expectedStock}, actual: ${product.stock})`;
+      }
+    }
+  });
+}
+
+// Gọi sau khi render table
+const originalRenderTable = renderTable;
+renderTable = function() {
+  originalRenderTable();
+  highlightStockMismatch();
+};
+// Hàm chỉ tính và cập nhật sold
+function fixSoldValues() {
+  reportData.forEach(p => {
+    const totalImported = p.imported || 0;
+    const totalStock = p.stock || 0;
+    const expectedSold = totalImported - totalStock;
+
+    // Nếu sold hiện tại khác expectedSold → cập nhật
+    if ((p.sold || 0) !== expectedSold) {
+      console.warn(`Cập nhật sold cho ${p.name}: ${p.sold || 0} → ${expectedSold}`);
+      p.sold = expectedSold;
+    }
+  });
+}
+
+// Hàm gọi khi bấm nút "Fix Sold"
+function fixSoldAndUpdate() {
+  fixSoldValues(); // Cập nhật giá trị sold
+  updateTotals();  // Cập nhật tổng nhập / tổng bán / tồn kho
+  renderTable();   // Render lại bảng
+
+  alert("✅ Đã cập nhật số lượng 'Đã bán' dựa trên Nhập - Tồn kho");
+}
+</script>
+<script src="/js/sidebar.js"></script>
+
+
+</body>
+</html>

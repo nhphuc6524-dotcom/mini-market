@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý nhà cung cấp</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/sidebar.css">
+
+<style>
+
+body{
+background:#f8f9fa;
+font-family:Inter,sans-serif;
+}
+
+.main-content{
+margin-left:240px;
+padding:30px;
+}
+
+.card{
+border:none;
+border-radius:12px;
+box-shadow:0 4px 6px rgba(0,0,0,0.1);
+}
+.product-box{
+max-height:180px;
+overflow-y:auto;
+border:1px solid #dee2e6;
+border-radius:8px;
+padding:10px;
+background:#fff;
+}
+
+.product-item{
+display:flex;
+align-items:center;
+padding:4px 0;
+font-size:14px;
+}
+
+.product-item input{
+margin-right:8px;
+}
+</style>
+
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main-content">
+
+<h3 class="fw-bold mb-4">Quản lý nhà cung cấp</h3>
+
+<div class="row">
+
+<!-- FORM -->
+<div class="col-12 mb-4">
+
+<div class="card p-4">
+
+<h5 class="mb-3">Thêm nhà cung cấp</h5>
+
+<input type="hidden" id="id">
+
+<div class="row">
+
+<div class="col-md-3 mb-3">
+<label>Tên nhà cung cấp</label>
+<input class="form-control" id="name">
+</div>
+
+<div class="col-md-2 mb-3">
+<label>Số điện thoại</label>
+<input class="form-control" id="phone">
+</div>
+
+<div class="col-md-3 mb-3">
+<label>Email</label>
+<input class="form-control" id="email">
+</div>
+
+<div class="col-md-2 mb-3">
+<label>Địa chỉ</label>
+<input class="form-control" id="address">
+</div>
+
+<div class="col-md-2 d-flex flex-column justify-content-end gap-2">
+
+<button class="btn btn-primary" onclick="saveSupplier()">
+<i class="fa fa-save"></i> Lưu
+</button>
+
+<button class="btn btn-secondary" onclick="clearForm()">
+Làm mới
+</button>
+
+</div>
+
+</div>
+
+<div class="mt-3">
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+
+<label class="fw-semibold">Sản phẩm cung cấp</label>
+
+<button class="btn btn-sm btn-outline-secondary"
+onclick="toggleProducts()">
+
+<i class="fa fa-eye"></i> Ẩn/Hiện
+
+</button>
+
+</div>
+<div id="productContainer">
+
+<input type="text" 
+class="form-control mb-2" 
+placeholder="Tìm sản phẩm..."
+onkeyup="filterProducts(this.value)">
+
+<div id="productList" class="product-box"></div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+
+<!-- TABLE -->
+<div class="col-12">
+
+<div class="card p-4">
+
+<h5 class="mb-3">Danh sách nhà cung cấp</h5>
+
+<div class="table-responsive">
+
+<table class="table table-hover">
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Tên</th>
+<th>Điện thoại</th>
+<th>Email</th>
+<th>Địa chỉ</th>
+<th>Sản phẩm</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+<div class="d-flex justify-content-end align-items-center mt-3">
+
+<button class="btn btn-sm btn-light me-2" onclick="prevPage()">
+<i class="fa fa-chevron-left"></i>
+</button>
+
+<span id="pageInfo" class="fw-semibold"></span>
+
+<button class="btn btn-sm btn-light ms-2" onclick="nextPage()">
+<i class="fa fa-chevron-right"></i>
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+let suppliers = []
+let currentPage = 1
+let rowsPerPage = 8
+const api = "/api/suppliers"
+
+function loadSuppliers(){
+
+fetch(api)
+.then(res=>res.json())
+.then(data=>{
+
+suppliers = data
+currentPage = 1
+displaySuppliers()
+
+})
+
+}
+
+const productApi = "/api/products"
+
+function loadProducts(){
+
+fetch(productApi)
+.then(res=>res.json())
+.then(data=>{
+
+let html=""
+
+data.forEach(p=>{
+
+html+=`
+
+<div class="product-item">
+
+<input type="checkbox" 
+value="${p.id}" 
+class="product-check">
+
+<span>${p.name}</span>
+
+</div>
+
+`
+
+})
+
+document.getElementById("productList").innerHTML = html
+
+})
+
+}
+
+function displaySuppliers(){
+
+let start = (currentPage-1) * rowsPerPage
+let end = start + rowsPerPage
+
+let pageItems = suppliers.slice(start,end)
+
+let rows=""
+
+pageItems.forEach(s=>{
+
+rows+=`
+
+<tr>
+
+<td>${s.id}</td>
+<td>${s.name}</td>
+<td>${s.phone ?? ""}</td>
+<td>${s.email ?? ""}</td>
+<td>${s.address ?? ""}</td>
+
+<td>
+<span class="badge bg-secondary">
+${s.product_count ?? 0}
+</span>
+</td>
+
+<td>
+
+<button class="btn btn-sm btn-light"
+onclick="editSupplier(${s.id})">
+
+<i class="fa fa-edit"></i>
+
+</button>
+
+<button class="btn btn-sm btn-danger"
+onclick="deleteSupplier(${s.id})">
+
+<i class="fa fa-trash"></i>
+
+</button>
+
+</td>
+
+</tr>
+
+`
+
+})
+
+document.getElementById("tableBody").innerHTML = rows
+
+let totalPages = Math.ceil(suppliers.length / rowsPerPage)
+
+document.getElementById("pageInfo").innerText =
+`Trang ${currentPage} / ${totalPages}`
+
+}
+function filterProducts(keyword){
+
+keyword = keyword.toLowerCase()
+
+document.querySelectorAll(".product-item").forEach(item=>{
+
+let name = item.innerText.toLowerCase()
+
+item.style.display = name.includes(keyword) ? "flex" : "none"
+
+})
+
+}
+
+function saveSupplier(){
+
+let id = document.getElementById("id").value
+
+let selectedProducts = 
+Array.from(document.querySelectorAll(".product-check:checked"))
+.map(p => p.value)
+
+let supplier={
+
+name:document.getElementById("name").value,
+phone:document.getElementById("phone").value,
+email:document.getElementById("email").value,
+address:document.getElementById("address").value,
+products:selectedProducts
+
+}
+
+if(id){
+
+fetch(api+"/"+id,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(supplier)
+}).then(()=>{
+loadSuppliers()
+clearForm()
+})
+
+}else{
+
+fetch(api,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(supplier)
+}).then(()=>{
+loadSuppliers()
+clearForm()
+})
+
+}
+
+}
+
+function nextPage(){
+
+if(currentPage * rowsPerPage < suppliers.length){
+
+currentPage++
+displaySuppliers()
+
+}
+
+}
+function toggleProducts(){
+
+let box = document.getElementById("productContainer")
+
+if(box.style.display === "none"){
+
+box.style.display = "block"
+
+}else{
+
+box.style.display = "none"
+
+}
+
+}
+function prevPage(){
+
+if(currentPage > 1){
+
+currentPage--
+displaySuppliers()
+
+}
+
+}
+
+function editSupplier(id){
+
+fetch(api+"/"+id)
+.then(res=>res.json())
+.then(data=>{
+
+let s = data.supplier
+
+document.getElementById("id").value = s.id
+document.getElementById("name").value = s.name
+document.getElementById("phone").value = s.phone
+document.getElementById("email").value = s.email
+document.getElementById("address").value = s.address
+
+// reset checkbox
+document.querySelectorAll(".product-check").forEach(c=>{
+c.checked = false
+})
+
+// tick lại product của supplier
+data.products.forEach(pid=>{
+
+let checkbox = document.querySelector(
+`.product-check[value="${pid}"]`
+)
+
+if(checkbox){
+checkbox.checked = true
+}
+
+})
+
+})
+
+}
+
+
+function deleteSupplier(id){
+
+if(confirm("Xóa nhà cung cấp?")){
+
+fetch(api+"/"+id,{
+method:"DELETE"
+}).then(()=>loadSuppliers())
+
+}
+
+}
+
+
+function clearForm(){
+
+document.getElementById("id").value=""
+document.getElementById("name").value=""
+document.getElementById("phone").value=""
+document.getElementById("email").value=""
+document.getElementById("address").value=""
+
+}
+
+loadSuppliers()
+loadProducts()
+</script>
+
+<script src="/js/sidebar.js"></script>
+
+</body>
+</html>

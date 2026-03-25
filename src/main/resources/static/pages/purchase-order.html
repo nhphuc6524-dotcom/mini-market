@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Nhập hàng</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/sidebar.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+
+body{
+background:#f8f9fa;
+font-family:Inter,sans-serif;
+}
+
+.main-content{
+margin-left:240px;
+padding:30px;
+}
+
+.card{
+border:none;
+border-radius:12px;
+box-shadow:0 4px 6px rgba(0,0,0,0.1);
+}
+
+</style>
+
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main-content">
+
+<h3 class="fw-bold mb-4">
+<i class="fa-solid fa-truck"></i>
+Nhập hàng từ nhà cung cấp
+</h3>
+
+<div class="card p-4 mb-4">
+
+<div class="row">
+
+<div class="col-md-4">
+
+<label>Nhà cung cấp</label>
+
+<select id="supplier" class="form-control"></select>
+
+</div>
+
+<div class="col-md-3">
+
+<label>Sản phẩm</label>
+
+<select id="product" class="form-control"></select>
+
+<small id="stockInfo" class="text-muted"></small>
+
+</div>
+
+<div class="col-md-2">
+
+<label>Số lượng</label>
+
+<input type="number" id="qty" class="form-control">
+
+</div>
+
+<div class="col-md-2">
+
+<label>Giá nhập</label>
+
+<input type="number" id="cost" class="form-control">
+
+</div>
+
+<div class="col-md-1 d-flex align-items-end">
+
+<button class="btn btn-primary w-100" onclick="addItem()">
+<i class="fa fa-plus"></i>
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="card p-4">
+
+<h5 class="mb-3">Danh sách sản phẩm nhập</h5>
+
+<div class="table-responsive">
+
+<table class="table">
+
+<thead>
+
+<tr>
+<th>Sản phẩm</th>
+<th>Số lượng</th>
+<th>Giá nhập</th>
+<th>Tổng</th>
+<th></th>
+</tr>
+
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+</div>
+
+<div class="d-flex justify-content-between mt-3">
+
+<h5>Tổng tiền: <span id="total">0</span> đ</h5>
+
+<button class="btn btn-success" onclick="createOrder()">
+<i class="fa fa-save"></i>
+Tạo phiếu nhập
+</button>
+
+</div>
+
+
+</div>
+<!-- Thêm dưới div card nhập hàng hiện tại -->
+<div class="card p-4 mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Lịch sử nhập hàng</h5>
+    <button class="btn btn-success" onclick="exportPurchaseHistoryExcel()">
+      <i class="fa-solid fa-file-excel"></i> Xuất Excel
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Ngày nhập</th>
+          <th>Nhà cung cấp</th>
+          <th>Sản phẩm</th>
+          <th>Số lượng</th>
+          <th>Giá nhập</th>
+          <th>Tổng</th>
+        </tr>
+      </thead>
+      <tbody id="historyTableBody">
+        <tr><td colspan="6" class="text-center">Đang tải...</td></tr>
+      </tbody>
+    </table>
+      <div id="historyPagination" class="mt-2 d-flex flex-wrap align-items-center"></div>
+
+  </div>
+</div>
+</div>
+
+
+<script>
+
+let items=[]
+let currentPageHistory = 1;
+const pageSizeHistory = 5; // số bản ghi mỗi trang
+let purchaseHistory = [];    // lưu dữ liệu lịch sử
+
+function loadPurchaseHistory() {
+  fetch("/api/purchase-orders")
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data)) data = [];
+      purchaseHistory = data; // lưu vào biến toàn cục
+      renderPurchaseHistory();
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById("historyTableBody").innerHTML =
+        `<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>`;
+    });
+}
+
+function renderPurchaseHistory() {
+  let rows = "";
+  if (purchaseHistory.length === 0) {
+    rows = `<tr><td colspan="6" class="text-center">Chưa có phiếu nhập</td></tr>`;
+    document.getElementById("historyTableBody").innerHTML = rows;
+    renderHistoryPagination(1); // 1 trang mặc định
+    return;
+  }
+
+  // tính tổng trang
+  const totalPages = Math.ceil(purchaseHistory.length / pageSizeHistory);
+
+  // lấy dữ liệu trang hiện tại
+  const start = (currentPageHistory - 1) * pageSizeHistory;
+  const end = start + pageSizeHistory;
+  const pageData = purchaseHistory.slice(start, end);
+
+  pageData.forEach(order => {
+    const supplierName = order.supplierName || "N/A";
+    const dateStr = order.date ? new Date(order.date).toLocaleString('vi-VN', {
+      hour:'2-digit', minute:'2-digit',
+      day:'2-digit', month:'2-digit', year:'numeric'
+    }) : "-";
+
+    const items = Array.isArray(order.items) ? order.items : [];
+    if (items.length === 0) {
+      rows += `<tr>
+        <td>${dateStr}</td>
+        <td>${supplierName}</td>
+        <td colspan="4" class="text-center">Không có sản phẩm</td>
+      </tr>`;
+    } else {
+      items.forEach(item => {
+        const total = (item.qty || 0) * (item.cost || 0);
+        rows += `<tr>
+          <td>${dateStr}</td>
+          <td>${item.supplierName}</td>
+          <td>${item.productName || "N/A"}</td>
+          <td>${item.qty || 0}</td>
+          <td>${(item.cost || 0).toLocaleString("vi-VN")}</td>
+          <td>${total.toLocaleString("vi-VN")}</td>
+        </tr>`;
+      });
+    }
+  });
+
+  document.getElementById("historyTableBody").innerHTML = rows;
+  renderHistoryPagination(totalPages);
+}
+
+function renderHistoryPagination(totalPages) {
+  let pagination = document.getElementById("historyPagination");
+  if (!pagination) {
+    const div = document.createElement("div");
+    div.id = "historyPagination";
+    div.className = "mt-3 d-flex flex-wrap align-items-center";
+    document.querySelector("#historyTableBody").parentNode.appendChild(div);
+    pagination = div;
+  }
+
+  if (totalPages <= 1) {
+    pagination.innerHTML = "";
+    return;
+  }
+
+  let html = "";
+
+  // Prev button
+  html += `<button class="btn btn-sm me-1 mb-1 ${currentPageHistory === 1 ? 'btn-secondary disabled' : 'btn-outline-primary'}" onclick="goToHistoryPage(${currentPageHistory-1})">&laquo; Prev</button>`;
+
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPageHistory - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  startPage = Math.max(1, endPage - maxButtons + 1);
+
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="btn btn-sm me-1 mb-1 ${i === currentPageHistory ? 'btn-primary' : 'btn-outline-primary'}" onclick="goToHistoryPage(${i})">${i}</button>`;
+  }
+
+  // Next button
+  html += `<button class="btn btn-sm me-1 mb-1 ${currentPageHistory === totalPages ? 'btn-secondary disabled' : 'btn-outline-primary'}" onclick="goToHistoryPage(${currentPageHistory+1})">Next &raquo;</button>`;
+
+  pagination.innerHTML = html;
+}
+
+function goToHistoryPage(page) {
+  currentPageHistory = page;
+  renderPurchaseHistory();
+}
+// load danh sách nhà cung cấp
+function loadSuppliers(){
+
+fetch("/api/suppliers")
+.then(res=>res.json())
+.then(data=>{
+
+let options='<option value="">-- Chọn NCC --</option>'
+
+data.forEach(s=>{
+options+=`<option value="${s.id}">${s.name}</option>`
+})
+
+document.getElementById("supplier").innerHTML=options
+
+})
+
+}
+
+// khi chọn nhà cung cấp → load sản phẩm của NCC
+document.getElementById("supplier").addEventListener("change",function(){
+
+let supplierId = this.value
+
+if(!supplierId){
+
+document.getElementById("product").innerHTML='<option value="">-- Chọn sản phẩm --</option>'
+return
+
+}
+
+fetch(`/api/suppliers/${supplierId}/products`)
+.then(res=>res.json())
+.then(data=>{
+
+let options='<option value="">-- Chọn sản phẩm --</option>'
+
+data.forEach(p=>{
+options+=`
+<option value="${p.id}" data-cost="${p.costPrice}">
+${p.name}
+</option>`
+})
+
+document.getElementById("product").innerHTML=options
+
+})
+
+})
+
+// khi chọn sản phẩm → tự hiện giá nhập
+document.getElementById("product").addEventListener("change",function(){
+
+let option = this.selectedOptions[0]
+
+if(!option) return
+
+let cost = option.dataset.cost
+let productId = this.value
+
+// tự điền giá nhập
+if(cost){
+document.getElementById("cost").value = cost
+}
+
+// load tồn kho
+fetch(`/api/products/${productId}`)
+.then(res=>res.json())
+.then(p=>{
+
+document.getElementById("stockInfo").innerText =
+"Tồn kho hiện tại: " + p.stockQuantity
+
+})
+
+})
+
+
+// Thêm sản phẩm vào danh sách nhập
+function addItem() {
+    const supplierSelect = document.getElementById("supplier")
+    const supplierId = Number(supplierSelect.value)
+    const supplierName = supplierSelect.selectedOptions[0]?.text
+
+    const productSelect = document.getElementById("product")
+    const productId = Number(productSelect.value)
+    const productName = productSelect.selectedOptions[0]?.text
+
+    const qty = Number(document.getElementById("qty").value)
+    const cost = Number(document.getElementById("cost").value)
+
+    if (!supplierId) {
+        alert("Chọn nhà cung cấp")
+        return
+    }
+    if (!productId) {
+        alert("Chọn sản phẩm")
+        return
+    }
+    if (!qty || qty <= 0) {
+        alert("Số lượng không hợp lệ")
+        return
+    }
+    if (!cost || cost <= 0) {
+        alert("Giá nhập không hợp lệ")
+        return
+    }
+
+    // Kiểm tra nếu sản phẩm đã tồn tại cùng NCC → cộng dồn
+    const existing = items.find(i => i.productId === productId && i.supplierId === supplierId)
+
+    if (existing) {
+        existing.qty += qty
+        existing.subtotal = existing.qty * existing.cost
+    } else {
+        items.push({
+            supplierId,
+            supplierName,
+            productId,
+            productName,
+            qty,
+            cost,
+            subtotal: qty * cost
+        })
+    }
+
+    renderItems()
+
+    document.getElementById("qty").value = ""
+    document.getElementById("cost").value = ""
+}
+
+// Hiển thị danh sách sản phẩm nhập
+function renderItems() {
+    let rows = ""
+    let total = 0
+
+    items.forEach((i, index) => {
+        const subtotal = i.qty * i.cost
+        total += subtotal
+        rows += `
+        <tr>
+            <td>${i.productName}</td>
+            <td>${i.qty}</td>
+            <td>${i.cost.toLocaleString("vi-VN")}</td>
+            <td>${subtotal.toLocaleString("vi-VN")}</td>
+            <td>${i.supplierName}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="removeItem(${index})">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        `
+    })
+
+    document.getElementById("tableBody").innerHTML = rows
+    document.getElementById("total").innerText = total.toLocaleString("vi-VN")
+}
+
+// Xóa sản phẩm
+function removeItem(index) {
+    items.splice(index, 1)
+    renderItems()
+}
+
+// Tạo phiếu nhập
+function createOrder() {
+    if (items.length === 0) {
+        alert("Chưa có sản phẩm");
+        return;
+    }
+
+    const supplierSelect = document.getElementById("supplier");
+    const supplierId = Number(supplierSelect.value);
+    if (!supplierId) {
+        alert("Chọn nhà cung cấp");
+        return;
+    }
+
+    // chỉ gửi productId, qty, cost
+    const order = {
+        supplierId: supplierId,
+        items: items.map(i => ({
+            productId: i.productId,
+            qty: i.qty,
+            cost: i.cost
+        }))
+    };
+
+    fetch("/api/purchase-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order)
+    })
+    .then(res => {
+        if (!res.ok) throw new Error();
+        alert("Nhập hàng thành công");
+
+        items = [];
+        renderItems();
+
+        // reset form
+        supplierSelect.value = "";
+        document.getElementById("product").innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+        document.getElementById("qty").value = "";
+        document.getElementById("cost").value = "";
+        document.getElementById("stockInfo").innerText = "";
+
+        loadPurchaseHistory();
+    })
+    .catch(() => {
+        alert("Lỗi tạo phiếu nhập");
+    });
+}
+
+loadSuppliers()
+loadPurchaseHistory(); // thêm dòng này
+</script>
+<script>
+function exportPurchaseHistoryExcel() {
+    const table = document.getElementById("historyTableBody");
+    if(!table) {
+        alert("Không có dữ liệu để xuất.");
+        return;
+    }
+
+    const rows = Array.from(table.querySelectorAll("tr"));
+    if(rows.length === 0) {
+        alert("Không có dữ liệu để xuất.");
+        return;
+    }
+
+    const data = [];
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        if(cells.length === 6) {
+            data.push({
+                "Ngày nhập": cells[0].innerText,
+                "Nhà cung cấp": cells[1].innerText,
+                "Sản phẩm": cells[2].innerText,
+                "Số lượng": cells[3].innerText,
+                "Giá nhập": cells[4].innerText,
+                "Tổng": cells[5].innerText
+            });
+        }
+    });
+
+    if(data.length === 0) {
+        alert("Không có dữ liệu để xuất.");
+        return;
+    }
+
+    // Tạo workbook và sheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // --- Tự động set độ rộng cột dựa vào độ dài chữ ---
+    const colWidths = Object.keys(data[0]).map(key => {
+        // tìm chiều dài lớn nhất trong cột
+        const maxLength = data.reduce((max, row) => {
+            const len = row[key] ? row[key].toString().length : 0;
+            return Math.max(max, len);
+        }, key.length); // bao gồm header
+        return { wch: maxLength + 2 }; // +2 để thừa ra 1 chút
+    });
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Lich_su_nhap_hang");
+
+    // Xuất file
+    XLSX.writeFile(wb, "Lich_su_nhap_hang.xlsx");
+}
+</script>
+<script src="/js/sidebar.js"></script>
+
+
+</body>
+</html>

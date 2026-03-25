@@ -8,6 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/sidebar.css">
     <script src="/js/auth.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #334155; }
         .main-content { margin-left: 240px; padding: 2rem; }
@@ -17,6 +20,29 @@
         .btn-primary { background: #4f46e5; border: none; padding: 10px 20px; }
         .btn-primary:hover { background: #4338ca; }
         .stock-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; }
+        table td{
+        white-space: nowrap;
+        vertical-align: middle;
+        }
+        /* Input tiền lớn hơn */
+        .money-input {
+            font-size: 1rem;      /* cỡ chữ lớn hơn */
+            height: 42px;         /* chiều cao input */
+            padding: 0 10px;      /* padding trái phải */
+            text-align: right;    /* căn phải cho tiền */
+        }
+        .input-group .input-group-text {
+            font-size: 1rem;
+            height: 42px;
+        }
+        #scanner{
+        width:350px;
+        margin-top:10px;
+        border-radius:10px;
+        overflow:hidden;
+        border:1px solid #ddd;
+        display:none;
+        }
     </style>
 </head>
 <body>
@@ -32,67 +58,139 @@
     </div>
 
     <div class="row">
-        <div class="col-md-4">
-            <div class="card p-4 mb-4">
-                <h5 class="fw-bold mb-3" id="formTitle"><i class="fa-solid fa-circle-plus me-2 text-primary"></i>Sản phẩm mới</h5>
-                <input type="hidden" id="id">
-                
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Tên sản phẩm</label>
-                    <input class="form-control" id="name" placeholder="Ví dụ: Coca Cola">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Mã Barcode</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="fa-solid fa-barcode"></i></span>
-                        <input class="form-control" id="barcode" placeholder="893...">
+        <!-- FORM THÊM SẢN PHẨM -->
+            <div class="col-12">
+                <div class="card p-4 mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fa-solid fa-circle-plus me-2 text-primary"></i>
+                        Sản phẩm mới
+                    </h5>
+
+                    <input type="hidden" id="id">
+
+                    <div class="row">
+
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label small fw-semibold">Tên sản phẩm</label>
+                            <input class="form-control" id="name" placeholder="Ví dụ: Coca Cola">
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label small fw-semibold">Barcode</label>
+                            <input class="form-control" id="barcode" readonly>
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label small fw-semibold">Danh mục</label>
+                            <select class="form-control" id="category"></select>
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label small fw-semibold">Giá nhập</label>
+                            <div class="input-group">
+                                <input class="form-control money-input" id="cost" onkeyup="formatMoney(this)">
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label small fw-semibold">Giá bán</label>
+                            <div class="input-group">
+                                <input class="form-control money-input" id="price" onkeyup="formatMoney(this)">
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-1 mb-3">
+                            <label class="form-label small fw-semibold">Số lượng</label>
+                            <input class="form-control" type="number" id="stock">
+                        </div>
+
+                        <div class="col-md-1 d-flex flex-column justify-content-end gap-2">
+                            <button class="btn btn-primary w-100 fw-bold" onclick="saveProduct()">Lưu</button>
+                            <button class="btn btn-outline-secondary w-100" onclick="clearForm()">Mới</button>
+                        </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label small fw-semibold">Giá bán (VND)</label>
-                        <input class="form-control" type="number" id="price" placeholder="0.00">
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label small fw-semibold">Số lượng</label>
-                        <input class="form-control" type="number" id="stock" placeholder="0">
-                    </div>
-                </div>
-                
-                <div class="d-grid gap-2 mt-2">
-                    <button class="btn btn-primary fw-bold" onclick="saveProduct()">Lưu sản phẩm</button>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="clearForm()">Làm mới</button>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-8">
+        <!-- DANH SÁCH SẢN PHẨM -->
+        <div class="col-12">
             <div class="card p-4">
+
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">Danh sách mặt hàng</h5>
-                    <div style="width: 300px;">
+
+                    <div style="width:420px;">
                         <div class="input-group">
-                            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                            <input class="form-control border-start-0 ps-0" id="search" placeholder="Quét hoặc nhập barcode..." onkeyup="searchBarcode()">
+
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                            </span>
+
+                            <input 
+                            class="form-control border-start-0 ps-0"
+                            id="search"
+                            placeholder="Quét barcode hoặc nhập..."
+                            onkeyup="handleBarcode(event)"
+                            autocomplete="off">
+
+                            <button class="btn btn-outline-secondary" onclick="startCameraScan()">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+
+                            <button class="btn btn-outline-secondary" onclick="refreshProducts()">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+
+                            <button class="btn btn-success ms-2" onclick="exportExcelMultiSheet()">
+                                <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                            </button>
+
                         </div>
+
+                        <!-- CAMERA SCANNER -->
+                        <div id="scanner"></div>
+
                     </div>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead>
-                            <tr>
-                                <th>Sản phẩm</th>
-                                <th>Barcode</th>
-                                <th>Giá</th>
-                                <th>Tồn kho</th>
-                                <th class="text-end">Hành động</th>
-                            </tr>
-                        </thead>
+                    <tr>
+                    <th onclick="sortProducts('name')" style="cursor:pointer">
+                    Sản phẩm <i class="fa fa-sort"></i>
+                    </th>
+
+                    <th>Danh mục</th>
+
+                    <th onclick="sortProducts('barcode')" style="cursor:pointer">
+                    Barcode <i class="fa fa-sort"></i>
+                    </th>
+
+                    <th onclick="sortProducts('costPrice')" style="cursor:pointer">
+                    Giá nhập <i class="fa fa-sort"></i>
+                    </th>
+
+                    <th onclick="sortProducts('price')" style="cursor:pointer">
+                    Giá bán <i class="fa fa-sort"></i>
+                    </th>
+
+                    <th onclick="sortProducts('price')" style="cursor:pointer">
+                    Lợi nhuận <i class="fa fa-sort"></i>
+                    </th>
+
+                    <th onclick="sortProducts('stockQuantity')" style="cursor:pointer">
+                    Tồn kho <i class="fa fa-sort"></i>
+                    </th>
+
+                    <th class="text-end">Hành động</th>
+                    </tr>
+                    </thead>
                         <tbody id="tableBody">
                             </tbody>
                     </table>
-
                     <div class="d-flex justify-content-between align-items-center mt-3">
 
                     <div class="text-muted small">
@@ -112,267 +210,8 @@
     </div>
 </div>
 
-<script>
+<script src="/js/sidebar.js"></script>
+<script src="/js/products.js"></script>
 
-const api = "/api/products"
-let products = []
-let currentPage = 1
-let rowsPerPage = 6
-
-function loadProducts(){
-
-fetch(api)
-.then(res => res.json())
-.then(data => {
-
-products = data
-currentPage = 1
-displayProducts()
-
-})
-
-}
-
-function displayProducts(){
-
-let start = (currentPage-1) * rowsPerPage
-let end = start + rowsPerPage
-
-let pageItems = products.slice(start,end)
-
-let rows = ""
-
-pageItems.forEach(p => {
-
-const stockColor = p.stockQuantity < 10 
-? 'bg-danger-subtle text-danger' 
-: 'bg-success-subtle text-success'
-
-rows += `
-<tr>
-<td>
-<div class="fw-semibold">${p.name}</div>
-<small class="text-muted">ID: #${p.id}</small>
-</td>
-
-<td><code>${p.barcode}</code></td>
-
-<td class="fw-bold">${Number(p.price).toLocaleString("vi-VN")} đ</td>
-
-<td>
-<span class="stock-badge ${stockColor}">
-${p.stockQuantity} món
-</span>
-</td>
-
-<td class="text-end">
-<button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
-<i class="fa-solid fa-pen-to-square"></i>
-</button>
-
-<button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
-<i class="fa-solid fa-trash"></i>
-</button>
-</td>
-</tr>
-`
-
-})
-
-document.getElementById("tableBody").innerHTML = rows
-
-let totalPages = Math.ceil(products.length / rowsPerPage)
-
-document.getElementById("pageInfo").innerText =
-`Page ${currentPage} / ${totalPages}`
-
-document.getElementById("showing").innerText =
-`${products.length} tổng`
-
-}
-function saveProduct(){
-
-let id = document.getElementById("id").value
-
-let product = {
-
-name: document.getElementById("name").value,
-barcode: document.getElementById("barcode").value,
-price: document.getElementById("price").value,
-stockQuantity: document.getElementById("stock").value
-
-}
-
-if(id){
-
-fetch(api + "/" + id,{
-
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(product)
-
-}).then(()=>{
-
-loadProducts()
-clearForm()
-
-})
-
-}
-
-else{
-
-fetch(api,{
-
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(product)
-
-}).then(()=>{
-
-loadProducts()
-clearForm()
-
-})
-
-}
-
-}
-
-function editProduct(id){
-
-fetch(api + "/" + id)
-.then(res=>res.json())
-.then(p=>{
-
-document.getElementById("id").value = p.id
-document.getElementById("name").value = p.name
-document.getElementById("barcode").value = p.barcode
-document.getElementById("price").value = p.price
-document.getElementById("stock").value = p.stockQuantity
-
-})
-
-}
-
-function deleteProduct(id){
-
-if(confirm("Delete product?")){
-
-fetch(api + "/" + id,{
-method:"DELETE"
-}).then(()=>loadProducts())
-
-}
-
-}
-
-function clearForm(){
-
-document.getElementById("id").value=""
-document.getElementById("name").value=""
-document.getElementById("barcode").value=""
-document.getElementById("price").value=""
-document.getElementById("stock").value=""
-
-}
-
-function searchBarcode(){
-
-let barcode = document.getElementById("search").value
-
-if(barcode === ""){
-loadProducts()
-return
-}
-
-fetch(api + "/barcode/" + barcode)
-.then(res=>res.json())
-.then(p=>{
-
-const stockColor = p.stockQuantity < 10 
-? 'bg-danger-subtle text-danger' 
-: 'bg-success-subtle text-success'
-
-let row = `
-<tr>
-<td>
-<div class="fw-semibold">${p.name}</div>
-<small class="text-muted">ID: #${p.id}</small>
-</td>
-
-<td><code>${p.barcode}</code></td>
-
-<td class="fw-bold">${Number(p.price).toLocaleString("vi-VN")} đ</td>
-
-<td>
-<span class="stock-badge ${stockColor}">
-${p.stockQuantity} món
-</span>
-</td>
-
-<td class="text-end">
-<button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
-<i class="fa-solid fa-pen-to-square"></i>
-</button>
-
-<button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
-<i class="fa-solid fa-trash"></i>
-</button>
-</td>
-</tr>
-`
-
-document.getElementById("tableBody").innerHTML = row
-
-})
-}
-
-loadProducts()
-
-</script>
-<script>
-fetch("/components/sidebar.html")
-.then(res => res.text())
-.then(data => {
-
-document.getElementById("sidebar").innerHTML = data;
-
-// highlight menu
-const links = document.querySelectorAll(".nav-link");
-const current = window.location.pathname;
-
-links.forEach(link=>{
-if(link.getAttribute("href") === current){
-link.classList.add("active");
-}
-});
-
-});
-function nextPage(){
-
-if(currentPage * rowsPerPage < products.length){
-
-currentPage++
-displayProducts()
-
-}
-
-}
-
-function prevPage(){
-
-if(currentPage > 1){
-
-currentPage--
-displayProducts()
-
-}
-
-}
-</script>
-<script>
-checkLogin()
-</script>
 </body>
 </html>

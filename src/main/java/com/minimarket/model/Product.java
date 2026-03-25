@@ -15,7 +15,13 @@ public class Product {
 
     private String barcode;
 
+    @Column(name="category_id")
+    private Integer categoryId;
+
     private BigDecimal price;
+
+    @Column(name="cost_price")
+    private BigDecimal costPrice;
 
     @Column(name="stock_quantity")
     private Integer stockQuantity;
@@ -34,7 +40,13 @@ public class Product {
     public BigDecimal getPrice(){ return price; }
     public void setPrice(BigDecimal price){ this.price=price; }
 
+    public BigDecimal getCostPrice(){ return costPrice; }
+    public void setCostPrice(BigDecimal costPrice){ this.costPrice=costPrice; }
+
     public Integer getStockQuantity(){ return stockQuantity; }
     public void setStockQuantity(Integer stockQuantity){ this.stockQuantity=stockQuantity; }
+
+    public Integer getCategoryId(){ return categoryId; }
+    public void setCategoryId(Integer categoryId){ this.categoryId = categoryId; }
 
 }
