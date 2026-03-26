@@ -456,6 +456,10 @@ loadProducts()
 </script>
 
 <script src="/js/sidebar.js"></script>
-
+<script src="/js/auth.js"></script>
+<script>
+    // Ví dụ: Chỉ cho phép ADMIN vào trang này
+    authGuard(["ADMIN"]); 
+</script>
 </body>
 </html>

@@ -1,12 +1,15 @@
 function getCurrentUser() {
     const userData = localStorage.getItem("user");
-    if(!userData) return null;
+    if (!userData) return null;
     try {
         const user = JSON.parse(userData);
-        if(!user.id) return null;
+        // Kiểm tra id có tồn tại không
+        if (!user || (!user.id && !user.userId)) {
+            console.error("Dữ liệu User trong Storage thiếu ID!");
+            return null;
+        }
         return user;
-    } catch(e) {
-        console.error("Lỗi parse user:", e);
+    } catch (e) {
         return null;
     }
 }

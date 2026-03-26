@@ -25,24 +25,24 @@ public class AuthController {
     // =================
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-
         Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
 
         if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "User not found"));
+            return ResponseEntity.status(401).body(Map.of("error", "Tài khoản không tồn tại"));
         }
 
         User user = userOpt.get();
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(401).body(Map.of("error", "Incorrect password"));
+            return ResponseEntity.status(401).body(Map.of("error", "Mật khẩu không chính xác"));
         }
 
-        // Trả thông tin user bình thường, không tạo JWT
+        // Trả về thông tin đầy đủ để Frontend lưu vào LocalStorage
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),
                 "username", user.getUsername(),
-                "role", user.getRole()
+                "role", user.getRole(),
+                "status", "success"
         ));
     }
 

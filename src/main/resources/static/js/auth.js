@@ -48,19 +48,22 @@ function authGuard(requiredRoles = []) {
     }
 }
 
-// Exports nếu bạn dùng module (ES6)
-// export { getUser, checkLogin, checkRole, logout, authGuard };
-function authorizedFetch(url, options={}) {
-    const token = localStorage.getItem("token");
+function authorizedFetch(url, options = {}) {
+    const user = getUser();
+    if (!user) {
+        window.location.href = "/login.html";
+        return Promise.reject("Chưa đăng nhập");
+    }
+
     options.headers = {
         ...options.headers,
-        "Authorization": "Bearer " + token,
         "Content-Type": "application/json"
     };
+
     return fetch(url, options).then(res => {
-        if(res.status === 401) {
-            alert("Phiên đăng nhập hết hạn!");
-            window.location.href = "/login.html";
+        if (res.status === 401 || res.status === 403) {
+            alert("Phiên làm việc hết hạn hoặc không có quyền!");
+            logout();
         }
         return res.json();
     });
