@@ -25,6 +25,13 @@ public class Product {
 
     @Column(name="stock_quantity")
     private Integer stockQuantity;
+    // Thêm vào class Product.java
+    @Column(name="unit_id") // Đảm bảo tên cột khớp với database
+    private Integer unitId;
+
+    // Getter và Setter
+    public Integer getUnitId() { return unitId; }
+    public void setUnitId(Integer unitId) { this.unitId = unitId; }
 
     public Product(){}
 

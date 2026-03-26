@@ -26,24 +26,31 @@ public class ReportController {
     private PurchaseOrderItemRepository purchaseOrderItemRepository;
     // Doanh thu hôm nay
     @GetMapping("/today")
-    public Map<String, Object> getTodayRevenue(){
-
+    public Map<String, Object> getTodayRevenue() {
         Map<String, Object> result = new HashMap<>();
 
-        String revenueSql =
-            "SELECT COALESCE(SUM(total),0) FROM orders WHERE DATE(order_date)=CURRENT_DATE";
+        // Tính doanh thu
+        String revenueSql = "SELECT COALESCE(SUM(total), 0) FROM orders WHERE DATE(order_date) = CURRENT_DATE";
+        
+        // TÍNH LỢI NHUẬN: (Giá bán - Giá nhập) * Số lượng
+        String profitSql = """
+            SELECT COALESCE(SUM((oi.price - p.cost_price) * oi.quantity), 0)
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            JOIN products p ON oi.product_id = p.id
+            WHERE DATE(o.order_date) = CURRENT_DATE
+        """;
 
-        String orderSql =
-            "SELECT COUNT(*) FROM orders WHERE DATE(order_date)=CURRENT_DATE";
-
-        String lowStockSql =
-            "SELECT COUNT(*) FROM products WHERE stock_quantity <= min_stock";
+        String orderSql = "SELECT COUNT(*) FROM orders WHERE DATE(order_date) = CURRENT_DATE";
+        String lowStockSql = "SELECT COUNT(*) FROM products WHERE stock_quantity <= min_stock";
 
         Double revenue = jdbcTemplate.queryForObject(revenueSql, Double.class);
+        Double profit = jdbcTemplate.queryForObject(profitSql, Double.class);
         Integer orderCount = jdbcTemplate.queryForObject(orderSql, Integer.class);
         Integer lowStock = jdbcTemplate.queryForObject(lowStockSql, Integer.class);
 
         result.put("revenue", revenue);
+        result.put("profit", profit); // Thêm trường này để đẩy về giao diện
         result.put("orderCount", orderCount);
         result.put("lowStockCount", lowStock);
 
@@ -66,16 +73,19 @@ public class ReportController {
 
     // Top sản phẩm bán chạy
     @GetMapping("/top-products")
-    public List<Map<String,Object>> topProducts(){
+    public List<Map<String, Object>> topProducts() {
         String sql = """
-            SELECT p.name, SUM(oi.quantity) as total_sold
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            GROUP BY p.name
+            SELECT 
+                p.id,
+                p.name,
+                COALESCE(SUM(oi.quantity), 0)::int AS total_sold,
+                SUM((oi.price - p.cost_price) * oi.quantity) AS total_profit
+            FROM products p
+            LEFT JOIN order_items oi ON oi.product_id = p.id
+            GROUP BY p.id, p.name
             ORDER BY total_sold DESC
             LIMIT 5
         """;
-
         return jdbcTemplate.queryForList(sql);
     }
 
@@ -139,33 +149,32 @@ public class ReportController {
     }
 
     @GetMapping("/revenue")
-    public List<Map<String,Object>> revenue(
-            @RequestParam(defaultValue = "day") String type){
-
+    public List<Map<String, Object>> revenue(@RequestParam(defaultValue = "day") String type) {
         String sql;
-
-        if(type.equals("month")){
+        if (type.equals("month")) {
             sql = """
                 SELECT 
-                    TO_CHAR(order_date,'MM/YYYY') AS label,
-                    SUM(total) AS revenue
-                FROM orders
-                GROUP BY label
-                ORDER BY label
-                LIMIT 12
+                    TO_CHAR(o.order_date, 'MM/YYYY') AS label,
+                    SUM(o.total) AS revenue,
+                    SUM((oi.price - p.cost_price) * oi.quantity) AS profit
+                FROM orders o
+                JOIN order_items oi ON o.id = oi.order_id
+                JOIN products p ON oi.product_id = p.id
+                GROUP BY label ORDER BY label LIMIT 12
             """;
-        }else{
+        } else {
             sql = """
                 SELECT 
-                    TO_CHAR(order_date,'DD/MM') AS label,
-                    SUM(total) AS revenue
-                FROM orders
-                WHERE order_date >= CURRENT_DATE - INTERVAL '7 day'
-                GROUP BY label
-                ORDER BY label
+                    TO_CHAR(o.order_date, 'DD/MM') AS label,
+                    SUM(o.total) AS revenue,
+                    SUM((oi.price - p.cost_price) * oi.quantity) AS profit
+                FROM orders o
+                JOIN order_items oi ON o.id = oi.order_id
+                JOIN products p ON oi.product_id = p.id
+                WHERE o.order_date >= CURRENT_DATE - INTERVAL '7 day'
+                GROUP BY label ORDER BY label
             """;
         }
-
         return jdbcTemplate.queryForList(sql);
     }
 }

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý đơn vị</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/css/sidebar.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+body{
+  background:#f8f9fa;
+  font-family:Inter,sans-serif;
+}
+.main-content{
+  margin-left:240px;
+  padding:30px;
+}
+.card{
+  border:none;
+  border-radius:12px;
+  box-shadow:0 4px 6px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<div class="main-content">
+
+<h3 class="fw-bold mb-4">
+<i class="fa-solid fa-ruler"></i> Quản lý đơn vị
+</h3>
+
+<div class="row">
+
+<!-- FORM -->
+<div class="col-md-4">
+<div class="card p-4">
+
+<h5 class="mb-3">Thêm đơn vị</h5>
+
+<input type="hidden" id="id">
+
+<div class="mb-3">
+<label>Tên đơn vị</label>
+<input class="form-control" id="name">
+</div>
+
+<div class="d-grid gap-2">
+<button class="btn btn-primary" onclick="saveUnit()">
+<i class="fa fa-save"></i> Lưu
+</button>
+
+<button class="btn btn-secondary" onclick="clearForm()">
+Làm mới
+</button>
+</div>
+
+</div>
+</div>
+
+<!-- TABLE -->
+<div class="col-md-8">
+<div class="card p-4">
+
+<h5 class="mb-3 d-flex justify-content-between align-items-center">
+Danh sách đơn vị
+<button class="btn btn-success" onclick="exportUnitsExcel()">
+<i class="fa-solid fa-file-excel"></i> Xuất Excel
+</button>
+</h5>
+
+<div class="table-responsive">
+<table class="table table-hover">
+<thead>
+<tr>
+<th>ID</th>
+<th>Tên</th>
+<th>Hành động</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+
+<div class="d-flex justify-content-end align-items-center mt-3">
+<button class="btn btn-sm btn-light me-2" onclick="prevPage()">Previous</button>
+<span id="pageInfo" class="fw-semibold"></span>
+<button class="btn btn-sm btn-light ms-2" onclick="nextPage()">Next</button>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+let units = []
+let currentPage = 1
+let rowsPerPage = 8
+const api="/api/units"
+
+function loadUnits(){
+    fetch(api)
+    .then(res=>res.json())
+    .then(data=>{
+        units = data
+        currentPage = 1
+        displayUnits()
+    })
+}
+
+function displayUnits(){
+    let start = (currentPage - 1) * rowsPerPage
+    let end = start + rowsPerPage
+    let pageItems = units.slice(start, end)
+    let rows = ""
+
+    pageItems.forEach(u=>{
+        rows += `
+        <tr>
+        <td>${u.id}</td>
+        <td>${u.name}</td>
+        <td>
+        <button class="btn btn-sm btn-light" onclick="editUnit(${u.id})">
+        <i class="fa fa-edit"></i>
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="deleteUnit(${u.id})">
+        <i class="fa fa-trash"></i>
+        </button>
+        </td>
+        </tr>
+        `
+    })
+
+    document.getElementById("tableBody").innerHTML = rows
+
+    let totalPages = Math.ceil(units.length / rowsPerPage)
+    document.getElementById("pageInfo").innerText =
+    `Page ${currentPage} / ${totalPages}`
+}
+
+function saveUnit() {
+    let id = document.getElementById("id").value;
+    let nameValue = document.getElementById("name").value.trim();
+
+    if (!nameValue) {
+        alert("Vui lòng nhập tên đơn vị!");
+        return;
+    }
+
+    let unit = { name: nameValue };
+
+    let method = id ? "PUT" : "POST";
+    let url = id ? api + "/" + id : api;
+
+    fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(unit)
+    })
+    .then(res => {
+        if (res.ok) {
+            loadUnits();
+            clearForm();
+        } else {
+            alert("Có lỗi xảy ra khi lưu dữ liệu!");
+        }
+    })
+    .catch(err => console.error("Lỗi:", err));
+}
+
+function editUnit(id){
+    fetch(api+"/"+id)
+    .then(res=>res.json())
+    .then(u=>{
+        document.getElementById("id").value=u.id
+        document.getElementById("name").value=u.name
+    })
+}
+
+function deleteUnit(id){
+    if(confirm("Xóa đơn vị?")){
+        fetch(api+"/"+id,{ method:"DELETE" })
+        .then(()=>loadUnits())
+    }
+}
+
+function clearForm(){
+    document.getElementById("id").value=""
+    document.getElementById("name").value=""
+}
+
+function nextPage(){
+    if(currentPage * rowsPerPage < units.length){
+        currentPage++
+        displayUnits()
+    }
+}
+
+function prevPage(){
+    if(currentPage > 1){
+        currentPage--
+        displayUnits()
+    }
+}
+
+function exportUnitsExcel(){
+    if(units.length === 0){ alert("Không có đơn vị để xuất."); return; }
+
+    const data = units.map(u=>({ID:u.id, Tên:u.name}))
+    const ws = XLSX.utils.json_to_sheet(data, {header:["ID","Tên"]})
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Đơn vị")
+    XLSX.writeFile(wb, "Danh_sach_don_vi.xlsx")
+}
+
+loadUnits()
+</script>
+
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

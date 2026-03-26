@@ -4,7 +4,7 @@ let categories = []
 
 let currentPage = 1
 let rowsPerPage = 6
-
+let units = []; // Thêm biến này ở đầu file
 let sortField = null
 let sortAsc = true
 function authorizedFetch(url, options = {}) {
@@ -28,6 +28,23 @@ function loadProducts() {
     });
 }
 
+function loadUnits() {
+    fetch('/api/units')
+        .then(res => res.json())
+        .then(data => {
+            units = data; // Lưu lại để dùng cho hàm getUnitName
+            let options = '<option value="">-- Đơn vị --</option>';
+            data.forEach(u => {
+                options += `<option value="${u.id}">${u.name}</option>`;
+            });
+            document.getElementById('unit').innerHTML = options;
+        });
+}
+
+function getUnitName(id) {
+    let u = units.find(x => x.id == id);
+    return u ? u.name : "-";
+}
 
 function displayProducts(){
 
@@ -42,64 +59,32 @@ pageItems.forEach(p => {
 let cost = p.costPrice || 0
 let price = p.price || 0
 let stock = p.stockQuantity || 0
-
 let profit = price - cost
 let profitColor = profit > 0 ? "text-success" : "text-danger"
 
 let categoryName = getCategoryName(p.categoryId)
-
+let unitName = p.unit ? p.unit.name : (p.unitId ? getUnitName(p.unitId) : "-");
 const stockColor = stock <= 10
 ? 'bg-danger-subtle text-danger'
 : 'bg-success-subtle text-success'
 
 rows += `
-<tr>
-
-<td>
-<div class="fw-semibold">${p.name}</div>
-<small class="text-muted">ID: #${p.id}</small>
-</td>
-
-<td>
-<span class="badge bg-primary">${categoryName || "Không có"}</span>
-</td>
-
-<td>
-<code>${p.barcode || ""}</code>
-</td>
-
-<td>
-${Number(cost).toLocaleString("vi-VN")} đ
-</td>
-
-<td class="fw-bold">
-${Number(price).toLocaleString("vi-VN")} đ
-</td>
-
-<td class="${profitColor} fw-bold">
-${Number(profit).toLocaleString("vi-VN")} đ
-</td>
-
-<td>
-<span class="stock-badge ${stockColor}">
-${stock} món
-</span>
-</td>
-
-<td class="text-end">
-
-<button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
-<i class="fa-solid fa-pen-to-square"></i>
-</button>
-
-<button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
-<i class="fa-solid fa-trash"></i>
-</button>
-
-</td>
-
-</tr>
-`
+        <tr>
+            <td>
+                <div class="fw-semibold">${p.name}</div>
+                <small class="text-muted">ID: #${p.id}</small>
+            </td>
+            <td><span class="badge bg-primary">${categoryName || "Không có"}</span></td>
+            <td><span class="badge bg-secondary">${unitName}</span></td> <td><code>${p.barcode || ""}</code></td>
+            <td>${Number(cost).toLocaleString("vi-VN")} đ</td>
+            <td class="fw-bold">${Number(price).toLocaleString("vi-VN")} đ</td>
+            <td class="${profitColor} fw-bold">${Number(profit).toLocaleString("vi-VN")} đ</td>
+            <td><span class="stock-badge ${stockColor}">${stock} món</span></td>
+            <td class="text-end">
+                <button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        </tr>`;
 })
 
 document.getElementById("tableBody").innerHTML = rows
@@ -133,92 +118,94 @@ let checkDigit = (10 - (sum % 10)) % 10
 return base + checkDigit
 }
 
-function saveProduct(){
+function saveProduct() {
+    // 1. Lấy giá trị từ các ô input
+    let id = document.getElementById("id").value;
+    let unitIdValue = document.getElementById("unit").value; // Lấy ID từ select
 
-let id = document.getElementById("id").value
+    // 2. Tạo object product để gửi lên server
+    let product = {
+        name: document.getElementById("name").value,
+        barcode: document.getElementById("barcode").value,
+        // Loại bỏ dấu chấm phân cách hàng nghìn trước khi gửi số về server
+        price: document.getElementById("price").value.replace(/\./g, ''),
+        costPrice: document.getElementById("cost").value.replace(/\./g, ''),
+        stockQuantity: document.getElementById("stock").value,
+        categoryId: document.getElementById("category").value,
+        // Gửi unitId dưới dạng số (Integer) để khớp với Backend
+        unitId: unitIdValue ? parseInt(unitIdValue) : null
+    };
 
-let product = {
+    // 3. Kiểm tra các trường bắt buộc
+    if (!product.name || !product.categoryId || !unitIdValue) {
+        alert("Vui lòng nhập đầy đủ Tên, Danh mục và Đơn vị!");
+        return;
+    }
 
-name: document.getElementById("name").value,
-barcode: document.getElementById("barcode").value,
+    if (!product.price || !product.stockQuantity) {
+        alert("Vui lòng nhập giá bán và số lượng!");
+        return;
+    }
 
-price: document.getElementById("price").value.replace(/\./g,''),
-costPrice: document.getElementById("cost").value.replace(/\./g,''),
+    // 4. Xử lý Gửi dữ liệu (Cập nhật hoặc Thêm mới)
+    if (id) {
+        // Cập nhật (PUT)
+        fetch(api + "/" + id, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(product)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Cập nhật thất bại");
+            return res.json();
+        })
+        .then(() => {
+            loadProducts();
+            clearForm();
+            alert("Cập nhật thành công!");
+        })
+        .catch(err => alert(err.message));
 
-stockQuantity: document.getElementById("stock").value,
-categoryId: document.getElementById("category").value
-
+    } else {
+        // Thêm mới (POST)
+        fetch(api, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(product)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Thêm mới thất bại");
+            return res.json();
+        })
+        .then(() => {
+            loadProducts();
+            clearForm();
+            alert("Thêm sản phẩm thành công!");
+        })
+        .catch(err => alert(err.message));
+    }
 }
 
-/* ===== THÊM Ở ĐÂY ===== */
 
-if(!product.name){
-alert("Vui lòng nhập tên sản phẩm")
-return
-}
-
-if(!product.categoryId){
-alert("Vui lòng chọn danh mục")
-return
-}
-
-if(!product.price){
-alert("Vui lòng nhập giá bán")
-return
-}
-
-if(!product.stockQuantity){
-alert("Vui lòng nhập số lượng")
-return
-}
-
-/* ===== HẾT PHẦN THÊM ===== */
-
-if(id){
-
-fetch(api + "/" + id,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(product)
-})
-.then(()=>{
-loadProducts()
-clearForm()
-})
-
-}else{
-
-fetch(api,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(product)
-})
-.then(()=>{
-loadProducts()
-clearForm()
-})
-
-}
-
-}
-
-
-function editProduct(id){
-
-fetch(api + "/" + id)
-.then(res=>res.json())
-.then(p=>{
-
-document.getElementById("id").value = p.id
-document.getElementById("name").value = p.name
-document.getElementById("barcode").value = p.barcode
-document.getElementById("price").value = p.price
-document.getElementById("cost").value = p.costPrice
-document.getElementById("stock").value = p.stockQuantity
-document.getElementById("category").value = p.categoryId
-
-})
-
+function editProduct(id) {
+    fetch(api + "/" + id)
+        .then(res => res.json())
+        .then(p => {
+            document.getElementById("id").value = p.id;
+            document.getElementById("name").value = p.name;
+            document.getElementById("barcode").value = p.barcode;
+            document.getElementById("price").value = p.price;
+            document.getElementById("cost").value = p.costPrice;
+            document.getElementById("stock").value = p.stockQuantity;
+            document.getElementById("category").value = p.categoryId;
+            
+            // Đổ dữ liệu vào select Unit
+            if(p.unit) {
+                document.getElementById("unit").value = p.unit.id;
+            } else if(p.unitId) {
+                document.getElementById("unit").value = p.unitId;
+            }
+        });
 }
 
 
@@ -274,80 +261,71 @@ document.getElementById("cost").value=""
 }
 
 
-function searchBarcode(){
+function searchBarcode() {
+    let barcode = document.getElementById("search").value.trim();
 
-let barcode = document.getElementById("search").value.trim()
+    if (barcode === "") {
+        loadProducts();
+        return;
+    }
 
-if(barcode === ""){
-loadProducts()
-return
-}
+    fetch(api + "/barcode/" + barcode)
+        .then(res => {
+            if (!res.ok) throw new Error("Not found");
+            return res.json();
+        })
+        .then(p => {
+            // Logic màu sắc tồn kho
+            const stockColor = p.stockQuantity <= 10
+                ? 'bg-danger-subtle text-danger'
+                : 'bg-success-subtle text-success';
 
-fetch(api + "/barcode/" + barcode)
-.then(res=>res.json())
-.then(p=>{
+            // Lấy tên đơn vị và danh mục
+            let unitName = p.unit ? p.unit.name : (p.unitId ? getUnitName(p.unitId) : "-");
+            let categoryName = getCategoryName(p.categoryId);
+            
+            // Tính toán lợi nhuận
+            let cost = p.costPrice || 0;
+            let price = p.price || 0;
+            let profit = price - cost;
+            let profitColor = profit > 0 ? "text-success" : "text-danger";
 
-const stockColor = p.stockQuantity < 10
-? 'bg-danger-subtle text-danger'
-: 'bg-success-subtle text-success'
+            // Tạo hàng dữ liệu (Đảm bảo đủ số lượng cột <td> tương ứng với <th>)
+            let row = `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${p.name}</div>
+                    <small class="text-muted">ID: #${p.id}</small>
+                </td>
+                <td><span class="badge bg-primary">${categoryName || "Không có"}</span></td>
+                <td><span class="badge bg-secondary">${unitName}</span></td>
+                <td><code>${p.barcode || ""}</code></td>
+                <td>${Number(cost).toLocaleString("vi-VN")} đ</td>
+                <td class="fw-bold">${Number(price).toLocaleString("vi-VN")} đ</td>
+                <td class="${profitColor} fw-bold">${Number(profit).toLocaleString("vi-VN")} đ</td>
+                <td><span class="stock-badge ${stockColor}">${p.stockQuantity} món</span></td>
+                <td class="text-end">
+                    <button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
 
-let profit = p.price - p.costPrice
-let categoryName = getCategoryName(p.categoryId)
+            // Cập nhật giao diện
+            document.getElementById("tableBody").innerHTML = row;
 
-let row = `
-<tr>
-
-<td>
-<div class="fw-semibold">${p.name}</div>
-<small class="text-muted">ID: #${p.id}</small>
-</td>
-
-<td>
-<span class="badge bg-primary">${categoryName}</span>
-</td>
-
-<td><code>${p.barcode}</code></td>
-
-<td>${Number(p.costPrice).toLocaleString("vi-VN")} đ</td>
-
-<td class="fw-bold">${Number(p.price).toLocaleString("vi-VN")} đ</td>
-
-<td class="text-success fw-bold">
-${Number(profit).toLocaleString("vi-VN")} đ
-</td>
-
-<td>
-<span class="stock-badge ${stockColor}">
-${p.stockQuantity} món
-</span>
-</td>
-
-<td class="text-end">
-
-<button class="btn btn-light btn-sm me-1" onclick="editProduct(${p.id})">
-<i class="fa-solid fa-pen-to-square"></i>
-</button>
-
-<button class="btn btn-light btn-sm text-danger" onclick="deleteProduct(${p.id})">
-<i class="fa-solid fa-trash"></i>
-</button>
-
-</td>
-
-</tr>
-`
-
-document.getElementById("tableBody").innerHTML = row
-
-// clear để quét tiếp
-document.getElementById("search").value = ""
-document.getElementById("search").focus()
-
-})
-.catch(()=>{
-alert("Không tìm thấy sản phẩm")
-})
-
+            // Reset ô tìm kiếm để chuẩn bị quét mã tiếp theo
+            document.getElementById("search").value = "";
+            document.getElementById("search").focus();
+        })
+        .catch(() => {
+            alert("Không tìm thấy sản phẩm có mã: " + barcode);
+            document.getElementById("search").value = "";
+            document.getElementById("search").focus();
+        });
 }
 
 
@@ -427,6 +405,7 @@ input.value = Number(value).toLocaleString("vi-VN")
 // init
 loadCategories().then(()=>{
 clearForm()
+loadUnits();
 loadProducts()
 
 })

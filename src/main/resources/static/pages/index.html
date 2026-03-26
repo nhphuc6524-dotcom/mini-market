@@ -142,6 +142,24 @@ main.overflow-auto {
     border-radius: 12px;
     overflow: hidden;
 }
+#invoice {
+    width: 75mm;
+    padding: 5mm;
+    font-family: 'Courier New', Courier, monospace; /* Font dạng máy in bill */
+    color: #000;
+    background: #fff;
+}
+
+#invoice table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Ép các cột tuân thủ width */
+}
+
+#invoice th, #invoice td {
+    word-wrap: break-word;
+    font-size: 11px;
+}
 </style>
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
@@ -184,6 +202,7 @@ main.overflow-auto {
                                 <th class="ps-4">Sản phẩm</th>
                                 <th class="text-center">Đơn giá</th>
                                 <th class="text-center">Số lượng</th>
+                                <th class="text-center">Tồn kho</th>
                                 <th class="text-end px-4">Thành tiền</th>
                                 <th></th>
                             </tr>
@@ -259,20 +278,64 @@ main.overflow-auto {
         </div>
     </aside>
 </div>
-<div id="invoice" style="width:300px; padding:10px; font-family:Arial; display:none">
+<div id="invoice" style="display:none; width: 75mm; padding: 5mm; font-family: 'Arial', sans-serif; color: #000; background: #fff; box-sizing: border-box;">
+    <div style="text-align:center; margin-bottom: 10px;">
+        <h3 style="margin:0; text-transform: uppercase;" id="pdfStoreName">SIÊU THỊ MINI</h3>
+        <p style="margin:2px 0; font-size: 11px;" id="pdfStoreAddress">225 Nguyễn Thông, P. Phú Thủy, Phan Thiết, Bình Thuận</p>
+        <p style="margin:2px 0; font-size: 11px;">SĐT: <span id="pdfStorePhone">0123456789</span></p>
+        
+        <hr style="border-top: 1px dashed #000; margin: 10px 0;">
+        
+        <p style="margin:2px 0; font-size: 12px; font-weight: bold;">HÓA ĐƠN THANH TOÁN</p>
+        <p style="margin:2px 0; font-size: 11px;" id="invoiceTimeStr"></p>
+    </div>
 
-<h3 style="text-align:center">MiniMarket</h3>
-<hr>
+    <div style="font-size: 12px; margin-bottom: 10px;">
+        <div><b>Mã đơn:</b> #ORD-<span id="pdfOrderId"></span></div>
+        <div><b>Thu ngân:</b> <span id="pdfCashier"></span></div>
+    </div>
 
-<div id="invoiceItems"></div>
+    <table style="width:100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px;">
+        <thead>
+            <tr style="border-top: 1px dashed #000; border-bottom: 1px dashed #000;">
+                <th style="text-align:left; padding: 5px 0;">Sản phẩm</th>
+                <th style="text-align:center; padding: 5px 0; width: 30px;">SL</th>
+                <th style="text-align:right; padding: 5px 0;">T.Tiền</th>
+            </tr>
+        </thead>
+        <tbody id="pdfItemsList">
+        </tbody>
+    </table>
 
-<hr>
+    <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+        <tr>
+            <td style="padding: 2px 0;">Tổng tiền hàng:</td>
+            <td style="text-align:right;" id="pdfSubTotal">0</td>
+        </tr>
+        <tr>
+            <td style="padding: 2px 0;">Giảm giá:</td>
+            <td style="text-align:right;" id="pdfDiscount">0</td>
+        </tr>
+        <tr style="font-weight:bold; font-size: 14px;">
+            <td style="padding: 5px 0; border-top: 1px solid #000;">TỔNG CỘNG:</td>
+            <td style="text-align:right; padding: 5px 0; border-top: 1px solid #000;" id="pdfFinalTotal">0</td>
+        </tr>
+        <tr>
+            <td style="padding: 2px 0;">Khách đưa:</td>
+            <td style="text-align:right;" id="pdfCashIn">0</td>
+        </tr>
+        <tr>
+            <td style="padding: 2px 0;">Tiền thừa:</td>
+            <td style="text-align:right;" id="pdfChange">0</td>
+        </tr>
+    </table>
 
-<div id="invoiceTotal"></div>
-
-<p style="text-align:center">Cam on quy khach!</p>
-
+    <div style="text-align:center; margin-top: 20px; font-size: 11px;">
+        <p>Cảm ơn Quý khách. Hẹn gặp lại!</p>
+        <p><i>(Vui lòng giữ hóa đơn để đối soát)</i></p>
+    </div>
 </div>
+
 <script src="/js/auth.js"></script>
 <script src="/js/index.js"></script>
 </body>

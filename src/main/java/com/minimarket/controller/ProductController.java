@@ -47,37 +47,36 @@ public class ProductController {
     @PostMapping
     public Product createProduct(@RequestBody Product product){
         validateProduct(product);
-        // Nếu costPrice null thì mặc định 0
-        if(product.getCostPrice() == null){
-            product.setCostPrice(BigDecimal.ZERO);
-        }
-        if(product.getPrice() == null){
-            product.setPrice(BigDecimal.ZERO);
-        }
-        if(product.getStockQuantity() == null){
-            product.setStockQuantity(0);
-        }
+        
+        // Đảm bảo các giá trị số không bị null
+        if(product.getCostPrice() == null) product.setCostPrice(BigDecimal.ZERO);
+        if(product.getPrice() == null) product.setPrice(BigDecimal.ZERO);
+        if(product.getStockQuantity() == null) product.setStockQuantity(0);
+        
+        // Gán unitId từ dữ liệu gửi lên
+        product.setUnitId(product.getUnitId());
+
         return productRepository.save(product);
     }
 
     // 5. Cập nhật sản phẩm
     @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable Integer id,
-                                @RequestBody Product product){
+    public Product updateProduct(@PathVariable Integer id, @RequestBody Product product){
 
         Integer safeId = Objects.requireNonNull(id, "ID must not be null");
         Product p = productRepository.findById(safeId)
                 .orElseThrow(() -> new RuntimeException("Product not found: " + safeId));
 
+        // Cập nhật các thông tin cơ bản
         p.setName(product.getName());
         p.setBarcode(product.getBarcode());
         p.setPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
         p.setCostPrice(product.getCostPrice() != null ? product.getCostPrice() : BigDecimal.ZERO);
         p.setStockQuantity(product.getStockQuantity() != null ? product.getStockQuantity() : 0);
-
-        // xử lý categoryId null-safe
-        Integer safeCatId = product.getCategoryId() != null ? product.getCategoryId() : 0;
-        p.setCategoryId(safeCatId);
+        
+        // Cập nhật Danh mục và Đơn vị
+        p.setCategoryId(product.getCategoryId() != null ? product.getCategoryId() : 0);
+        p.setUnitId(product.getUnitId()); // ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT
 
         return productRepository.save(p);
     }

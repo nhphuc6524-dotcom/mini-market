@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Báo cáo doanh thu - MiniMarket</title>
+    <title>Dashboard - MiniMarket</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,6 +16,8 @@
         .stat-card { transition: transform 0.2s; border-left: 5px solid #4f46e5; }
         .stat-card:hover { transform: translateY(-5px); }
         .card-header { background: white; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding: 1.25rem; }
+        .bg-purple-subtle { background-color: #f3e8ff; }
+        .text-purple { color: #8b5cf6; }
     </style>
 </head>
 <body>
@@ -24,12 +26,11 @@
 
 <div class="main-content">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold">Báo cáo & Thống kê</h3>
+        <h3 class="fw-bold">Dashboard</h3>
         <div class="d-flex gap-2">
             <button class="btn btn-white border shadow-sm btn-sm" onclick="location.reload()">
-                <i class="fa-solid fa-sync me-1"></i> Làm mới dữ liệu
+                <i class="fa-solid fa-sync me-1"></i> Làm mới
             </button>
-
             <button class="btn btn-success btn-sm" onclick="exportRevenueExcel()">
                 <i class="fa-solid fa-file-excel me-1"></i> Xuất Excel
             </button>
@@ -37,11 +38,11 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card stat-card p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted small fw-bold mb-1">DOANH THU HÔM NAY</p>
+                        <p class="text-muted small fw-bold mb-1">DOANH THU</p>
                         <h3 class="fw-bold mb-0 text-primary" id="todayRevenue">0 đ</h3>
                     </div>
                     <div class="bg-primary-subtle p-3 rounded-circle">
@@ -50,11 +51,24 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card stat-card p-3" style="border-left-color: #8b5cf6;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1">LỢI NHUẬN</p>
+                        <h3 class="fw-bold mb-0 text-purple" id="todayProfit">0 đ</h3>
+                    </div>
+                    <div class="bg-purple-subtle p-3 rounded-circle">
+                        <i class="fa-solid fa-chart-line fa-2x text-purple"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card stat-card p-3" style="border-left-color: #10b981;">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted small fw-bold mb-1">ĐƠN HÀNG MỚI</p>
+                        <p class="text-muted small fw-bold mb-1">ĐƠN HÀNG</p>
                         <h3 class="fw-bold mb-0 text-success" id="orderCount">0</h3>
                     </div>
                     <div class="bg-success-subtle p-3 rounded-circle">
@@ -63,11 +77,11 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card stat-card p-3" style="border-left-color: #f59e0b;">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted small fw-bold mb-1">SẢN PHẨM SẮP HẾT</p>
+                        <p class="text-muted small fw-bold mb-1">SẮP HẾT HÀNG</p>
                         <h3 class="fw-bold mb-0 text-warning" id="lowStockCount">0</h3>
                     </div>
                     <div class="bg-warning-subtle p-3 rounded-circle">
@@ -81,21 +95,15 @@
     <div class="row g-4">
         <div class="col-md-8">
             <div class="card h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-
-                <div>
-                <select id="reportType" class="form-select form-select-sm">
-                <option value="day">Theo ngày (7 ngày)</option>
-                <option value="month">Theo tháng (12 tháng)</option>
-                </select>
-                </div>
-
-                </div>
-                <div class="card-header">
-                    <i class="fa-solid fa-chart-line me-2 text-primary"></i>Biểu đồ doanh thu 7 ngày qua
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-chart-area me-2 text-primary"></i>Biểu đồ tăng trưởng</span>
+                    <select id="reportType" class="form-select form-select-sm" style="width: auto;">
+                        <option value="day">Theo ngày (7 ngày)</option>
+                        <option value="month">Theo tháng (12 tháng)</option>
+                    </select>
                 </div>
                 <div class="card-body">
-                    <canvas id="revenueChart" height="280"></canvas>
+                    <canvas id="revenueChart" height="280" style="filter: drop-shadow(0px 10px 8px rgba(0,0,0,0.02));"></canvas>
                 </div>
             </div>
         </div>
@@ -103,285 +111,153 @@
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-header">
-                    <i class="fa-solid fa-trophy me-2 text-warning"></i>Top sản phẩm bán chạy
+                    <i class="fa-solid fa-trophy me-2 text-warning"></i>Top sản phẩm & Lợi nhuận
                 </div>
                 <div class="card-body p-0">
-                    <ul id="topProducts" class="list-group list-group-flush">
-                        </ul>
+                    <ul id="topProducts" class="list-group list-group-flush"></ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="/js/sidebar.js"></script>
 <script>
-let revenueData = []
-
 let chart;
 
-// load khi trang mở
 document.addEventListener("DOMContentLoaded", function(){
-
     loadTodayStats();
     loadRevenue();
     loadTopProducts();
-
 });
 
-// đổi loại báo cáo
-document.getElementById("reportType")
-.addEventListener("change", loadRevenue);
-
-
-// =======================
-// Thống kê hôm nay
-// =======================
+document.getElementById("reportType").addEventListener("change", loadRevenue);
 
 function loadTodayStats(){
-
-fetch("/api/reports/today")
-.then(res=>res.json())
-.then(data=>{
-
-document.getElementById("todayRevenue").innerText =
-Number(data.revenue).toLocaleString("vi-VN") + " đ"
-
-document.getElementById("orderCount").innerText =
-data.orderCount || 0
-
-document.getElementById("lowStockCount").innerText =
-data.lowStockCount || 0
-
-})
-
+    fetch("/api/reports/today")
+    .then(res=>res.json())
+    .then(data=>{
+        document.getElementById("todayRevenue").innerText = Number(data.revenue || 0).toLocaleString("vi-VN") + " đ";
+        document.getElementById("todayProfit").innerText = Number(data.profit || 0).toLocaleString("vi-VN") + " đ";
+        document.getElementById("orderCount").innerText = data.orderCount || 0;
+        document.getElementById("lowStockCount").innerText = data.lowStockCount || 0;
+    });
 }
-
-
-// =======================
-// Biểu đồ doanh thu
-// =======================
 
 function loadRevenue(){
+    let type = document.getElementById("reportType").value;
+    fetch("/api/reports/revenue?type=" + type)
+    .then(res=>res.json())
+    .then(data=>{
+        let labels = data.map(d=>d.label);
+        let revenues = data.map(d=>d.revenue);
+        let profits = data.map(d=>d.profit || 0);
 
-let type = document.getElementById("reportType").value
+        if(chart) chart.destroy();
 
-fetch("/api/reports/revenue?type=" + type)
-.then(res=>res.json())
-.then(data=>{
-revenueData = data
-let labels = data.map(d=>d.label)
-let values = data.map(d=>d.revenue)
-
-// xoá chart cũ
-if(chart){
-chart.destroy()
+        chart = new Chart(document.getElementById("revenueChart"), {
+            type: "bar", // Chuyển sang biểu đồ cột
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Lợi nhuận",
+                        data: profits,
+                        backgroundColor: "#10b981", // Màu xanh lá cho lợi nhuận
+                        borderRadius: 5,
+                        order: 1
+                    },
+                    {
+                        label: "Doanh thu",
+                        data: revenues,
+                        backgroundColor: "#e2e8f0", // Màu xám nhạt cho doanh thu (nền)
+                        borderRadius: 5,
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top' },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        stacked: false, // Để cột đè lên nhau hoặc đứng cạnh nhau
+                        grid: { borderDash: [5, 5] }
+                    },
+                    x: { 
+                        stacked: true, // Chồng lợi nhuận lên doanh thu để thấy tỷ lệ
+                        grid: { display: false } 
+                    } 
+                }
+            }
+        });
+    });
 }
-
-chart = new Chart(
-document.getElementById("revenueChart"),
-{
-type:"line",
-
-data:{
-labels:labels,
-
-datasets:[{
-
-label:"Doanh thu (VND)",
-data:values,
-
-borderColor:"#4f46e5",
-backgroundColor:"rgba(79,70,229,0.1)",
-fill:true,
-tension:0.4
-
-}]
-
-},
-
-options:{
-
-responsive:true,
-maintainAspectRatio:false,
-
-plugins:{
-legend:{display:false}
-},
-
-scales:{
-y:{
-beginAtZero:true
-},
-x:{
-grid:{display:false}
-}
-}
-
-}
-
-})
-
-})
-
-}
-
-
-// =======================
-// Top sản phẩm
-// =======================
 
 function loadTopProducts(){
-
-fetch("/api/reports/top-products")
-.then(res=>res.json())
-.then(data=>{
-
-let list=document.getElementById("topProducts")
-
-list.innerHTML = data.map((p,index)=>`
-
-<li class="list-group-item d-flex justify-content-between align-items-center py-3">
-
-<div>
-
-<span class="badge bg-light text-dark border me-2">
-${index+1}
-</span>
-
-<span class="fw-semibold">
-${p.name}
-</span>
-
-</div>
-
-<span class="badge bg-primary-subtle text-primary rounded-pill px-3">
-
-${p.total_sold} món
-
-</span>
-
-</li>
-
-`).join("")
-
-})
-
+    fetch("/api/reports/top-products")
+    .then(res=>res.json())
+    .then(data=>{
+        let list = document.getElementById("topProducts");
+        list.innerHTML = data.map((p, index) => `
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <span class="badge bg-light text-dark border me-2">${index + 1}</span>
+                    <span class="fw-semibold">${p.name}</span>
+                    <div class="small text-success mt-1">Lãi: ${Number(p.total_profit || 0).toLocaleString("vi-VN")} đ</div>
+                </div>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
+                    ${p.total_sold} món
+                </span>
+            </li>
+        `).join("");
+    });
 }
 
 async function exportRevenueExcel(){
+    try {
+        let type = document.getElementById("reportType").value;
+        let [rev, top, today] = await Promise.all([
+            fetch(`/api/reports/revenue?type=${type}`).then(res => res.json()),
+            fetch("/api/reports/top-products").then(res => res.json()),
+            fetch("/api/reports/today").then(res => res.json())
+        ]);
 
-try{
+        const wb = XLSX.utils.book_new();
 
-// gọi API
-let revenueRes = await fetch("/api/reports/revenue?type=" + document.getElementById("reportType").value)
-let revenue = await revenueRes.json()
+        // Sheet Doanh thu chi tiết
+        let revSheet = [["Thời gian", "Doanh thu (VND)", "Lợi nhuận (VND)"]];
+        rev.forEach(r => revSheet.push([r.label, r.revenue, r.profit || 0]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(revSheet), "Doanh thu");
 
-let topRes = await fetch("/api/reports/top-products")
-let topProducts = await topRes.json()
+        // Sheet Top sản phẩm
+        let topSheet = [["STT", "Sản phẩm", "Số lượng bán", "Tổng lợi nhuận (VND)"]];
+        top.forEach((p, i) => topSheet.push([i+1, p.name, p.total_sold, p.total_profit || 0]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(topSheet), "Top sản phẩm");
 
-let todayRes = await fetch("/api/reports/today")
-let today = await todayRes.json()
-
-
-const wb = XLSX.utils.book_new()
-
-
-// ==========================
-// Sheet 1 - Doanh thu
-// ==========================
-
-let revenueSheet = [
-["Thời gian","Doanh thu (VND)"]
-]
-
-revenue.forEach(r=>{
-revenueSheet.push([
-r.label,
-r.revenue
-])
-})
-
-let ws1 = XLSX.utils.aoa_to_sheet(revenueSheet)
-
-ws1['!cols'] = [
-{wch:20},
-{wch:20}
-]
-
-XLSX.utils.book_append_sheet(wb, ws1, "📈 Doanh thu")
-
-
-
-// ==========================
-// Sheet 2 - Top sản phẩm
-// ==========================
-
-let topSheet = [
-["STT","Tên sản phẩm","Số lượng bán"]
-]
-
-topProducts.forEach((p,index)=>{
-topSheet.push([
-index+1,
-p.name,
-p.total_sold
-])
-})
-
-let ws2 = XLSX.utils.aoa_to_sheet(topSheet)
-
-ws2['!cols'] = [
-{wch:10},
-{wch:30},
-{wch:20}
-]
-
-XLSX.utils.book_append_sheet(wb, ws2, "🏆 Top sản phẩm")
-
-
-
-// ==========================
-// Sheet 3 - Thống kê hôm nay
-// ==========================
-
-let todaySheet = [
-
-["Chỉ số","Giá trị"],
-
-["Doanh thu hôm nay", today.revenue || 0],
-
-["Đơn hàng mới", today.orderCount || 0],
-
-["Sản phẩm sắp hết", today.lowStockCount || 0]
-
-]
-
-let ws3 = XLSX.utils.aoa_to_sheet(todaySheet)
-
-ws3['!cols'] = [
-{wch:25},
-{wch:20}
-]
-
-XLSX.utils.book_append_sheet(wb, ws3, "📊 Thống kê hôm nay")
-
-
-
-// ==========================
-// Xuất file
-// ==========================
-
-XLSX.writeFile(wb,"BaoCaoMiniMarket.xlsx")
-
-}catch(e){
-
-console.error(e)
-alert("Lỗi khi xuất Excel")
-
-}
-
+        XLSX.writeFile(wb, "BaoCao_MiniMarket_Full.xlsx");
+    } catch(e) {
+        alert("Lỗi xuất file!");
+    }
 }
 </script>
-
 </body>
 </html>

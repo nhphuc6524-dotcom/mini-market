@@ -1,11 +1,28 @@
 /* Sidebar layout */
 
-.sidebar{
-height:100vh;
-background:#1e293b;
-color:white;
-position:fixed;
-width:240px;
+/* Sidebar layout */
+.sidebar {
+    height: 100vh;
+    background: #1e293b;
+    color: white;
+    position: fixed;
+    width: 240px;
+    
+    /* Các dòng thêm mới bên dưới giúp cuộn nội dung */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Tự động hiện thanh cuộn khi nội dung dài hơn màn hình */
+    scrollbar-width: thin; /* (Tùy chọn) Làm thanh cuộn nhỏ lại trên Firefox */
+    scrollbar-color: #475569 transparent; /* (Tùy chọn) Màu thanh cuộn */
+}
+
+/* (Tùy chọn) Làm thanh cuộn đẹp hơn trên Chrome/Safari */
+.sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 10px;
 }
 
 /* Menu link */
@@ -20,14 +37,16 @@ transition:0.2s;
 
 /* Hover */
 
-.nav-link:hover{
-background:#334155;
-color:white;
+/* Màu cho mục đang được chọn */
+.nav-link.active {
+    background: #4f46e5 !important; /* Màu xanh Indigo giống nút Lưu */
+    color: white !important;
+    font-weight: 600;
 }
 
-/* Active page */
-
-.nav-link.active{
-background:#334155;
-color:white;
+/* Thêm hiệu ứng di chuyển nhẹ khi hover cho đẹp */
+.nav-link:hover {
+    background: #334155;
+    color: white;
+    padding-left: 25px; /* Đẩy nhẹ sang phải khi di chuột */
 }
